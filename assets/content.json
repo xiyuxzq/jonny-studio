@@ -1,0 +1,30 @@
+[
+  {
+    "title": "让一个渲染实验，成为可验证的作品",
+    "description": "从“看起来不错”出发，走向可解释、可比较、可复现的结果。",
+    "url": "articles/rendering-as-an-experiment.html",
+    "category": "研究方法",
+    "keywords": "性能 优化 测试 对比 基线"
+  },
+  {
+    "title": "从一块布开始：我的渲染研究计划",
+    "description": "把范围缩小，把问题问深。先理解光，再扩展生成与交互。",
+    "url": "articles/a-piece-of-cloth.html",
+    "category": "研究计划",
+    "keywords": "织物 布料 纤维 PBR 材质 渲染 采样"
+  },
+  {
+    "title": "给创作留一个长期的位置",
+    "description": "用作品积累判断，用文字保留过程。这里是一个持续更新的个人空间。",
+    "url": "articles/starting-a-studio.html",
+    "category": "创作随笔",
+    "keywords": "博客 创作 个人 成长"
+  },
+  {
+    "title": "Surface Study / 材质与光",
+    "description": "可交互的 WebGL 材质演示",
+    "url": "lab.html",
+    "category": "实验",
+    "keywords": "WebGL GLSL 金属 铜 陶瓷 着色器 Shader"
+  }
+]
