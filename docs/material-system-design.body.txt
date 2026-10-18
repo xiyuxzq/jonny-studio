@@ -1,0 +1,86 @@
+<p class="article-lead">一个效果能在演示场景里成立，只说明它在当前输入与观察条件下有效。进入生产后，它还必须回答另一组问题：换一套资源是否仍然成立，参数如何交给其他人，目标平台不支持某项功能时如何回退，以及一次共享代码修改会影响哪些资产。</p>
+<p>材质系统的设计，应从这些变化出发。本文将它拆成四层：<strong>视觉约束、数据契约、着色能力、交付策略</strong>。贯穿四层的是可重复的验证。下面用“为一类不透明表面加入方向性光泽”作为贯穿示例，讨论如何把单个效果转化为可维护的能力。</p>
+<p class="scope-note">本文是系统设计与实现方法文章。配置、代码和测试资产均为独立教学示例；验证器的七组输入已运行检查，文中不包含生产项目收益或 GPU 性能实测。</p>
+<h2 id="problem">01 / 先确定系统要承受哪些变化</h2>
+<p>假设一件服装的方向性高光已经调到满意。随后出现四个需求：另一件服装需要复用；纹理制作工具要批量导出方向数据；移动端需要替代实现；共享函数修复后，旧服装的外观不能意外改变。这些需求分别涉及资源、工具、平台和版本，靠复制材质图无法建立可靠的对应关系。</p>
+<p>这里的设计目标不是“一份 Shader 适配一切”，而是让变化拥有明确的入口。资源变化通过数据契约表达，外观变化通过受约束的参数表达，执行路径变化通过能力组合表达，不兼容修改则通过版本迁移表达。</p>
+<figure class="system-flow"><div><b>视觉约束</b><span>需要保留什么外观</span></div><div><b>数据契约</b><span>资源如何表达输入</span></div><div><b>着色能力</b><span>输入如何变成响应</span></div><div><b>交付策略</b><span>目标环境如何实现</span></div><figcaption>四层共同接受画质、稳定性与成本验证。这是决策依赖关系，不是四个 GPU Pass。</figcaption></figure>
+<h2 id="visual">02 / 把视觉目标写成可观察的约束</h2>
+<p>“更像丝绸”有助于沟通方向，却不足以约束实现。进一步的问题包括：光泽是否沿织造方向拉伸，旋转光源时高光如何移动，掠射角是否形成柔和轮廓，以及远景中哪些细节可以消退。技术方案应服务这些可观察的线索。</p>
+<div class="table-scroll"><table><thead><tr><th>观察维度</th><th>需要明确的内容</th><th>可能的误判</th></tr></thead><tbody><tr><td>光向与视向</td><td>分别转动光源、相机，观察响应</td><td>把固定环境图中的亮条误认成材质本身的高光形状</td></tr><tr><td>材料尺度</td><td>宏观褶皱、方向性光泽、微观织纹各自负责什么</td><td>用更强的细法线补偿整体光泽不足</td></tr><tr><td>质量回退</td><td>哪些辨识线索必须保留，哪些细节可以近似</td><td>关闭功能后虽然更快，但材料已经失去原有特征</td></tr></tbody></table></div>
+<p>我的划分原则是：<strong>先定义外观不变量，再选择可以变化的实现</strong>。近景的纱线可以逐渐退化为统计意义上的整体响应，但不能因为拉远镜头就突然从柔和织物变成光滑塑料。这里要求保持的是关键观感，不是逐像素一致。</p>
+<h2 id="contract">03 / 数据契约比贴图命名更重要</h2>
+<p>一张名为 Mask 的纹理没有解释任何接口。调用方仍然不知道通道顺序、数值域、坐标空间、导入解码与缺失行为。只要不同工具对其中一项理解不同，Shader 就可能用合法的数据产生错误的画面。</p>
+<p>下面是一份<strong>自定义教学布局</strong>，不是通用引擎规范：</p>
+<div class="table-scroll"><table><thead><tr><th>输入</th><th>语义与约定</th><th>缺失处理</th></tr></thead><tbody><tr><td>surface_mask.R</td><td>方向性效果覆盖率，线性标量，范围 [0,1]</td><td>该示例要求存在；缺失阻止发布</td></tr><tr><td>surface_mask.G</td><td>该材料族的感知粗糙度输入，线性标量；不是微表面分布参数 α 本身</td><td>不隐式猜测其他通道</td></tr><tr><td>surface_mask.B</td><td>保留通道，当前消费者不使用</td><td>改变用途需要升级契约版本</td></tr><tr><td>fiber_direction</td><td>相对切线基底的方向数据；编码、轴向与手性需另行约定</td><td>启用方向性能力时必需，否则可不提供</td></tr><tr><td>highlight_strength</td><td>本示例定义的 [0,1] 艺术控制量；不是物理反射率</td><td>缺失、非有限值或越界均报告错误</td></tr></tbody></table></div>
+<p>颜色编码和数据语义必须分开。对于线性遮罩，若错误地启用 sRGB 解码，编码值 0.5 约会变成 0.214，已经不再是原本希望传入的 0.5。纹理导入设置因此属于接口的一部分，而不是美术人员的个人偏好。Epic 的纹理编辑器文档说明了 sRGB 选项如何影响数据解释。<a href="#ref-texture">[1]</a></p>
+<p>法线与方向纹理还需要检查坐标约定。以 RG 编码平面方向为例，可以定义解码向量 <code>d = 2 × RG − 1</code>，然后归一化；但接近零长度的输入必须有明确行为。镜像 UV 的切线手性、烘焙工具的基底和引擎导入结果也需要一致。文档中只写“切线空间”，仍不足以保证整个链路正确。</p>
+<h3>参数的意义不能随实现悄悄改变</h3>
+<p>如果旧版本将一个参数解释为感知粗糙度 r，新版本直接把它当成微表面参数 α，即使参数名称和取值范围没有变化，外观也可能变化。若某条实现路径采用 <code>α = r²</code>，这项映射应属于模块定义，不能依赖调用者猜测；其他路径也不能未经比较就套用这一映射。</p>
+<p>因此，契约需要区分“数据写的是什么”和“实现内部怎样使用它”。一个稳定的系统应允许内部算法改进，同时明确说明哪些更新能够保持原有输入语义，哪些需要迁移资产。</p>
+<h2 id="modules">04 / 按依赖关系拆模块，而不是按节点数量</h2>
+<p>对于方向性光泽，坐标变换、纹理解码和局部遮罩可以形成独立计算单元；完整材料族则负责表面组合与受光规则；实例负责同一能力集合中的纹理与参数差异；质量配置决定目标环境允许哪些能力。</p>
+<div class="table-scroll"><table><thead><tr><th>组织单元</th><th>负责的变化</th><th>拆分判断</th></tr></thead><tbody><tr><td>共享函数</td><td>解码、坐标变换、局部计算</td><td>输入输出可以独立描述，多个调用方具有相同语义</td></tr><tr><td>材料族</td><td>着色组合、数据布局、必要 Pass</td><td>混合模式或核心输入明显不同，应重新评估边界</td></tr><tr><td>实例与预设</td><td>配色、纹理、受约束的参数</td><td>外观变化不要求新增核心执行路径</td></tr><tr><td>质量配置</td><td>能力集合与替代实现</td><td>目标设备、渲染路径和质量需求发生变化</td></tr></tbody></table></div>
+<p>共享代码的判断标准是语义相同，而不是公式长得相似。如果两个效果对强度、遮罩和关闭行为的理解不同，把它们放进同一个函数反而会增加条件分支与隐式约定。</p>
+<p>引擎工具提供的是组织手段。Unreal 的 Material Functions 和 Material Layers 可以帮助构建分层材料，材质实例可以暴露参数。是否使用某种组织方式，仍应取决于材料依赖与制作流程，而不是先选择工具，再强行把所有表面塞入同一结构。<a href="#ref-layers">[2]</a></p>
+<h2 id="variants">05 / 管理被支持的组合，而不只是开关数量</h2>
+<p>有 k 个互相独立的二值开关时，逻辑状态上限为 <strong>2<sup>k</sup></strong>。例如 8 个开关有 256 个逻辑组合。这不等于最终 Shader 数量：平台、Pass、顶点工厂、编译规则和裁剪都会影响实际产物。</p>
+<p>Unreal 的静态参数参与编译，实例实际使用的组合会产生相应的材质编译需求；普通运行时参数则不能与静态路径选择混为一谈。<a href="#ref-instances">[3]</a> Unity 也把不同关键字组合的编译形式作为 Shader 变体管理。<a href="#ref-unity">[4]</a></p>
+<p>一个可控的做法，是把经过检查的组合定义为明确的预设，而不是把全部自由组合直接交给生产。新增预设至少要说明依赖输入、支持平台、关闭行为和验收样例。未支持的组合应在导入或发布检查阶段给出错误，不能依靠最后一轮人工看图才发现。</p>
+<p>这不意味着所有功能都应该用静态开关。编译期选择、运行时分支以及以参数归零控制贡献具有不同成本，具体效果取决于实现与编译结果。尤其是把强度设为零，不等于纹理采样或相关计算必然从执行路径中消失。</p>
+<h2 id="validation">06 / 用一个最小检查器让契约可执行</h2>
+<p>文档容易在多人迭代中失效。把关键约束转成检查规则，可以让错误在资源进入渲染之前暴露。下面的 Python 示例检查版本、遮罩布局、参数范围、方向依赖与质量配置。它接收已归一化的元数据，并不直接解析 Unreal 或 Unity 的资产文件。</p>
+<pre><code>&quot;&quot;&quot;Material contract teaching example. Python 3, no engine dependency.&quot;&quot;&quot;
+from copy import deepcopy
+from math import isfinite
+
+
+def validate(material):
+    &quot;&quot;&quot;Expects normalized metadata; this is not an engine asset-file parser.&quot;&quot;&quot;
+    errors = []
+    if material.get(&quot;schema_version&quot;) != 1:
+        errors.append(&quot;schema_version: explicit migration required&quot;)
+    textures = material.get(&quot;textures&quot;, {})
+    mask = textures.get(&quot;surface_mask&quot;, {})
+    if mask.get(&quot;color_space&quot;) != &quot;linear&quot;:
+        errors.append(&quot;surface_mask: linear data required&quot;)
+    if mask.get(&quot;channels&quot;) != [&quot;coverage&quot;, &quot;roughness&quot;, &quot;reserved&quot;]:
+        errors.append(&quot;surface_mask: incompatible channel layout&quot;)
+    strength = material.get(&quot;highlight_strength&quot;)
+    if (type(strength) not in (int, float)
+            or not isfinite(strength) or not 0 &lt;= strength &lt;= 1):
+        errors.append(&quot;highlight_strength: finite value in [0, 1] required&quot;)
+    features = set(material.get(&quot;features&quot;, []))
+    if features - {&quot;directional_highlight&quot;}:
+        errors.append(&quot;features: unsupported feature&quot;)
+    if &quot;directional_highlight&quot; in features:
+        if textures.get(&quot;fiber_direction&quot;, {}).get(&quot;space&quot;) != &quot;tangent&quot;:
+            errors.append(&quot;fiber_direction: tangent-space input required&quot;)
+    quality = material.get(&quot;quality&quot;)
+    if quality not in {&quot;full&quot;, &quot;base&quot;}:
+        errors.append(&quot;quality: unknown profile&quot;)
+    elif quality == &quot;base&quot; and features:
+        errors.append(&quot;quality: base profile does not support these features&quot;)
+    return errors
+</code></pre>
+<p><a href="../assets/examples/material_contract.py" download>下载完整 Python 示例与测试数据</a>。使用 Python 3 执行该文件即可运行七组固定输入。示例中的 <code>base</code> 配置明确不支持方向性能力；“选择一个合法替代预设”属于单独的质量策略，验证器不会偷偷关闭功能或修改原始资产。</p>
+<div class="table-scroll"><table><thead><tr><th>输入案例</th><th>检查结果</th><th>拦截的问题</th></tr></thead><tbody><tr><td>合法元数据</td><td>接受</td><td>满足示例契约</td></tr><tr><td>遮罩标记为 sRGB</td><td>拒绝</td><td>数值解释错误</td></tr><tr><td>交换遮罩通道语义</td><td>拒绝</td><td>接口布局不兼容</td></tr><tr><td>启用方向性但缺少方向输入</td><td>拒绝</td><td>能力依赖不完整</td></tr><tr><td>强度为 NaN</td><td>拒绝</td><td>无法参与可靠数值计算</td></tr><tr><td>基础配置仍携带方向性能力</td><td>拒绝</td><td>能力集合不兼容</td></tr><tr><td>旧契约版本</td><td>拒绝</td><td>需要显式迁移</td></tr></tbody></table></div>
+<p>这七组输入已经运行，结果符合预期。验证范围仅限这些规则及固定测试数据：它不会识别一张内容画错、但元数据正确的方向图，也不会判断光泽是否好看，更不能代替引擎编译和设备测试。实际接入时，应由 DCC 或引擎适配层读取真实导入设置，再转换为统一元数据。</p>
+<h2 id="quality">07 / 平台回退必须回到视觉目标</h2>
+<p>“移动端关闭方向性高光”只描述操作，没有定义合格结果。需要先回答：主视角下是否还能读出材料方向？是否可以用更低成本的响应近似？远景是否可以减少微观细节而保留整体光泽？只有这些问题明确，才有依据决定预算如何分配。</p>
+<p>平台能力与画面尺度是两个不同维度。某个效果在桌面端同样会因远景采样不足而不稳定；某个移动端近景则可能需要保留它。不要把两种决策合并为一个粗糙的高低画质按钮。引擎的质量级别提供配置机制，实际方案仍需在目标渲染路径和设备上检验。<a href="#ref-quality">[5]</a></p>
+<p>同时避免把“允许的范围”和“已经验证的范围”混为一谈。一个预设可以规定哪些参数合法，但只有覆盖代表视角、极值和组合的样例，才能说明哪些条件已经被检查。界面上的滑块范围本身不是画质保证。</p>
+<h2 id="acceptance">08 / 让每次变更都有对应的回归范围</h2>
+<p>材质系统的验证分为三类：<strong>输入是否合规、视觉是否成立、目标环境成本是否可接受</strong>。第一类尽量自动检查，第二类需要可比较的画面与运动测试，第三类需要记录目标设备和实际测量条件。</p>
+<div class="table-scroll"><table><thead><tr><th>变更</th><th>最相关的检查</th><th>不能省略的边界</th></tr></thead><tbody><tr><td>方向编码或切线变换</td><td>镜像 UV、光源旋转、相机绕转</td><td>同时检查生产工具和消费端</td></tr><tr><td>粗糙度或细节过滤</td><td>固定分辨率拉远镜头，并播放连续运动</td><td>静帧正确不能证明时序稳定</td></tr><tr><td>共享着色函数</td><td>受影响材料族和实际使用预设</td><td>一个样板通过不等于所有组合通过</td></tr><tr><td>平台路径</td><td>功能回退、画质对照与设备采样</td><td>编辑器中的预览不能充当真机耗时</td></tr></tbody></table></div>
+<p>性能记录至少包括设备、引擎版本、构建方式、分辨率、角色覆盖面积、光照条件和测量工具。比较新增能力的成本时，可在相同条件下分别采集启用与关闭的结果，预热并重复测量，记录相关 Pass 的耗时及波动。不要用单帧峰值或静态指令数直接代替整体成本结论。</p>
+<h3>资产迁移也是材质系统的一部分</h3>
+<p>假设 v1 的遮罩 G 通道保存粗糙度，v2 想改成光泽度。这属于语义变更，不能只替换节点。迁移应列出受影响资产，检查旧版本标识，生成新资源或新元数据，再用固定镜头比较结果。批处理应支持预览和可恢复的输出，重复执行时也不应再次反转已经迁移的数据。</p>
+<p>系统发布说明应记录修改了什么、哪些资产需要迁移、哪些预设重新验证，以及仍未覆盖的条件。没有这份信息，共享材质的每次更新都会变成一次猜测。</p>
+<h2 id="delivery">09 / 一个材质能力真正需要交付什么</h2>
+<p>一个可以进入持续生产的材质能力，至少应包含六部分：<strong>视觉目标、输入契约、实现与预设、质量策略、验证样例、版本记录</strong>。六者不要求复杂，但需要能相互对应。</p>
+<p>只有一两个独立效果时，没有必要立即搭建大型平台。一份明确的输入说明、少量检查规则与一个固定测试场景，往往就能暴露最重要的边界。随着资源、调用者和平台增加，再把重复出现的约束提升为共享工具。</p>
+<p>我更看重这样的系统是否让问题容易定位：出错时知道从哪里查，改动时知道影响谁，交付时知道验证了什么。可维护性最终体现在这些具体行为中，而不是材质库包含多少节点、函数或效果。</p>
+<h2 id="references">参考资料与验证范围</h2>
+<ol class="references"><li id="ref-texture"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/texture-asset-editor-in-unreal-engine">Epic Games — Texture Asset Editor</a>：纹理导入、sRGB 等属性。</li><li id="ref-layers"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/layering-materials-in-unreal-engine">Epic Games — Layered Materials</a>：材质函数与 Material Layers 的组织方式。</li><li id="ref-instances"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/instanced-materials-in-unreal-engine">Epic Games — Material Instances</a>：参数化、继承与静态参数。</li><li id="ref-unity"><a href="https://docs.unity3d.com/Manual/shader-variants.html">Unity Manual — Shader variants</a>：变体的编译和管理。</li><li id="ref-quality"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/scalability-reference-for-unreal-engine">Epic Games — Scalability Reference</a>：质量分级机制。</li></ol>
+<p class="scope-note">资料核对日期：2026-10-18。本文用引擎文档说明机制，设计分层与验证流程为方法建议。代码仅在 Python 环境运行固定输入测试，未声明完成引擎插件接入、图像回归或跨平台性能验证。</p>

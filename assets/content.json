@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "title": "材质系统设计：从一个效果到可维护的生产能力",
+    "description": "从视觉约束、数据契约到模块边界与质量验收，附可运行的参数检查器。",
+    "url": "articles/material-system-design.html",
+    "category": "工程与生产体系",
+    "type": "系统设计",
+    "status": "published",
+    "date": "2026-10-18",
+    "keywords": "材质 系统 参数 契约 验证 变体 平台"
+  }
+]
