@@ -1,10 +1,10 @@
 [
   {
-    "title": "角色卡通渲染体系：从皮肤、头发与眼睛，到时装和特殊材质",
-    "description": "以16项一手资料梳理角色卡通渲染：明暗分层、面部控制、头发高光、眼球、织物，以及虹彩、闪点与POM的实现边界。",
+    "title": "日式角色卡通渲染体系：以《终末地》为审美参照",
+    "description": "以《终末地》为主要审美参照，结合《罪恶装备 Xrd》《原神》公开资料与社区实践，梳理日式角色的皮肤、头发、眼睛、时装与特殊材质。",
     "url": "articles/stylized-character-rendering.html",
     "category": "技术综述",
-    "keywords": "卡通 NPR Toon Cel 皮肤 SSS 面部 SDF 法线 头发 高光 各向异性 眼球 虹膜 时装 服装 织物 材质 镭射 虹彩 薄膜 干涉 衍射 闪点 亮片 glints 视差 POM 描边 UE Unity 性能 优化"
+    "keywords": "卡通 NPR Toon Cel 皮肤 SSS 面部 SDF 法线 头发 高光 各向异性 眼球 虹膜 时装 服装 织物 材质 镭射 虹彩 薄膜 干涉 衍射 闪点 亮片 glints 视差 POM 描边 UE Unity 性能 优化 日式 二次元 三渲二 动画 终末地 明日方舟 原神 罪恶装备 Guilty Gear Xrd Genshin Endfield 知乎"
   },
   {
     "title": "让一个渲染实验，成为可验证的作品",
