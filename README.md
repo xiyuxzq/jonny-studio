@@ -43,3 +43,7 @@ Jonny 的中文技术美术博客与个人作品站。黑白灰主色的深色�
 - 配图：`assets/toon/`，两张原创 SVG 示意（`face.svg` 面部阈值图流程、`pipeline.svg` 着色组成），非引擎渲染结果。
 - 交互：`assets/toon-study.js`，两个教学演示：明暗分层；面部阈值图（程序合成的头部，用与文中 Python 相同的流程在浏览器里烘焙）。
 - 文中 HLSL 为示意代码，未在引擎内编译；Python 烘焙代码已用合成数据验证。关于终末地的说法在正文中按来源标注，不应在后续修改中把复现或个人观察写成官方实现。
+
+## 文章图表与公式
+
+角色渲染文章包含三张 Mermaid 流程图及四组 LaTeX 公式。Mermaid 源码保存在正文的 `pre.mermaid` 中，LaTeX 保存在 `.latex-display` 中；页面和 `docs/stylized-character-rendering.body.txt` 需同步维护。`assets/article-notation.js` 负责渲染，样式为 `assets/article-notation.css`。Mermaid 与 KaTeX 及公式字体随站点保存在 `assets/vendor/`，版本和许可见该目录 README；无需在读者浏览时访问外部 CDN。窄屏下图表、长公式可在块内横向滑动。

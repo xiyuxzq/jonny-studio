@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#121212"><title>日式角色卡通渲染拆解：从 Ramp 到面部 SDF，以终末地为参照 · Jonny Studio</title><meta name="description" content="拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，结合《终末地》相关公开资料讨论实现取舍。"><meta property="og:type" content="article"><meta property="og:title" content="日式角色卡通渲染拆解：从 Ramp 到面部 SDF，以终末地为参照 · Jonny Studio"><meta property="og:description" content="拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，结合《终末地》相关公开资料讨论实现取舍。"><link rel="icon" href="../assets/favicon.svg?v=20261018-mono" type="image/svg+xml"><link rel="stylesheet" href="../assets/style.css?v=20261018-mono"><link rel="alternate" type="application/rss+xml" title="Jonny Studio" href="../feed.xml"><script defer src="../assets/app.js?v=20261018-mono"></script></head><body id="top" data-base="../"><a class="skip" href="#main">跳到正文</a><div class="wrap"><header class="header"><a class="brand" href="../index.html" aria-label="Jonny Studio 首页"><span class="brand-mark" aria-hidden="true"></span>jonny<span style="color:var(--accent)">.</span><small>TECH ART & RENDERING</small></a><nav class="nav" aria-label="主导航"><a href="../index.html#work">实验</a><a href="../index.html#journal">文章</a><a href="../index.html#about">关于</a><button class="search-btn" data-search aria-label="搜索文章与实验"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><path d="m12 12 5 5" stroke="currentColor" stroke-width="1.4"/></svg><span>搜索</span><kbd>/</kbd></button></nav></header></div><main id="main" class="wrap"><header class="page-head survey-header"><nav class="breadcrumb" aria-label="面包屑"><a href="../index.html">首页</a><span>/</span><a href="../index.html#journal">研究与记录</a><span>/</span><span>技术综述</span></nav><div class="eyebrow">ANIME CHARACTER SHADING / 日式角色渲染</div><h1>日式角色卡通渲染拆解：从 Ramp 到面部 SDF</h1><p class="lead">以《终末地》为视觉参照，从材质分区、Ramp 漫反射到面部 SDF 阈值图，解析角色明暗、头发高光、眼睛透显、描边与光照的协同关系。</p><div class="meta"><span>JONNY STUDIO</span><time datetime="2026-10-18">2026.10.18</time><span>约 25 分钟 · 30 项参考资料</span></div></header><div class="survey-layout"><aside class="survey-toc" aria-label="文章目录"><span>IN THIS ARTICLE / 目录</span><a href="#summary">00 / 角色着色结构总览</a><a href="#pipeline">01 / 材质分区与着色数据</a><a href="#diffuse">02 / 漫反射：阈值加 Ramp</a><a href="#face">03 / 面部阴影：SDF 阈值图</a><a href="#bangs">04 / 刘海投影与局部遮挡</a><a href="#hair">05 / 头发</a><a href="#eyes">06 / 眼睛</a><a href="#outline">07 / 描边</a><a href="#light">08 / 角色光照与场景光照的协调</a><a href="#body">09 / 衣服、皮肤和后处理</a><a href="#evidence">10 / 《终末地》案例：公开信息与实现推断</a><a href="#practice">11 / 实现顺序与验收</a><a href="#references">参考资料</a></aside><article class="prose"><div class="survey-note"><strong>阅读说明</strong><p>本文讨论日式角色三渲二的着色结构，重点分析面部阈值图及其与头发、眼睛、描边和光照的协同关系。《终末地》作为视觉参照，相关技术分析区分主创访谈、社区复现与画面观察，来源见第 10 节。HLSL 为实现示意，配套交互使用程序合成数据，不涉及游戏资产。</p></div>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#121212"><title>日式角色卡通渲染拆解：从 Ramp 到面部 SDF，以终末地为参照 · Jonny Studio</title><meta name="description" content="拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，结合《终末地》相关公开资料讨论实现取舍。"><meta property="og:type" content="article"><meta property="og:title" content="日式角色卡通渲染拆解：从 Ramp 到面部 SDF，以终末地为参照 · Jonny Studio"><meta property="og:description" content="拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，结合《终末地》相关公开资料讨论实现取舍。"><link rel="icon" href="../assets/favicon.svg?v=20261018-mono" type="image/svg+xml"><link rel="stylesheet" href="../assets/style.css?v=20261018-mono"><link rel="alternate" type="application/rss+xml" title="Jonny Studio" href="../feed.xml"><script defer src="../assets/app.js?v=20261018-mono"></script><link rel="stylesheet" href="../assets/vendor/katex/katex.min.css"><link rel="stylesheet" href="../assets/article-notation.css?v=20261018"></head><body id="top" data-base="../"><a class="skip" href="#main">跳到正文</a><div class="wrap"><header class="header"><a class="brand" href="../index.html" aria-label="Jonny Studio 首页"><span class="brand-mark" aria-hidden="true"></span>jonny<span style="color:var(--accent)">.</span><small>TECH ART & RENDERING</small></a><nav class="nav" aria-label="主导航"><a href="../index.html#work">实验</a><a href="../index.html#journal">文章</a><a href="../index.html#about">关于</a><button class="search-btn" data-search aria-label="搜索文章与实验"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><path d="m12 12 5 5" stroke="currentColor" stroke-width="1.4"/></svg><span>搜索</span><kbd>/</kbd></button></nav></header></div><main id="main" class="wrap"><header class="page-head survey-header"><nav class="breadcrumb" aria-label="面包屑"><a href="../index.html">首页</a><span>/</span><a href="../index.html#journal">研究与记录</a><span>/</span><span>技术综述</span></nav><div class="eyebrow">ANIME CHARACTER SHADING / 日式角色渲染</div><h1>日式角色卡通渲染拆解：从 Ramp 到面部 SDF</h1><p class="lead">以《终末地》为视觉参照，从材质分区、Ramp 漫反射到面部 SDF 阈值图，解析角色明暗、头发高光、眼睛透显、描边与光照的协同关系。</p><div class="meta"><span>JONNY STUDIO</span><time datetime="2026-10-18">2026.10.18</time><span>约 25 分钟 · 30 项参考资料</span></div></header><div class="survey-layout"><aside class="survey-toc" aria-label="文章目录"><span>IN THIS ARTICLE / 目录</span><a href="#summary">00 / 角色着色结构总览</a><a href="#pipeline">01 / 材质分区与着色数据</a><a href="#diffuse">02 / 漫反射：阈值加 Ramp</a><a href="#face">03 / 面部阴影：SDF 阈值图</a><a href="#bangs">04 / 刘海投影与局部遮挡</a><a href="#hair">05 / 头发</a><a href="#eyes">06 / 眼睛</a><a href="#outline">07 / 描边</a><a href="#light">08 / 角色光照与场景光照的协调</a><a href="#body">09 / 衣服、皮肤和后处理</a><a href="#evidence">10 / 《终末地》案例：公开信息与实现推断</a><a href="#practice">11 / 实现顺序与验收</a><a href="#references">参考资料</a></aside><article class="prose"><div class="survey-note"><strong>阅读说明</strong><p>本文讨论日式角色三渲二的着色结构，重点分析面部阈值图及其与头发、眼睛、描边和光照的协同关系。《终末地》作为视觉参照，相关技术分析区分主创访谈、社区复现与画面观察，来源见第 10 节。HLSL 为实现示意，配套交互使用程序合成数据，不涉及游戏资产。</p></div>
 <p class="article-intro">日式角色三渲二的核心，是在连续的三维光照中保持经过设计的二维形状。面部需要简洁的阴影，头发需要受控的高光，眼睛需要稳定的表情信息，描边则需要适应镜头与距离变化。这些局部处理必须遵循统一的光照规则。面部阈值图将阴影形状从几何法线中解耦，是本文的重点；相关社区实现覆盖《原神》《崩坏：星穹铁道》及《终末地》风格角色。</p>
 <p>《终末地》的官方画面用于分析风格与视觉层级；具体算法则结合社区作者公开的分析与实现讨论。视觉相似性与实现一致性需要分别判断。</p>
 <figure class="wide-figure"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20261013/8d941e9d4f5162941a07df3ee6bf3231.png" width="1920" height="1080" fetchpriority="high" referrerpolicy="no-referrer" alt="终末地官方干员叙事祀：洒扫庭除宣传封面，展示脸部、头发与服装配件"></a><figcaption>图 1｜官方「祀：洒扫庭除」宣传封面。脸上的明暗交界很柔，看不到硬边的鼻影；头发高光是连续的亮带。封面含宣传排版和后期，不能当作实机着色的证据。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a><a class="cite" href="#ref-27">[27]</a>；© HYPERGRYPH。</figcaption></figure>
@@ -28,8 +28,23 @@
 <p>Gaolingx 的 README 中 B 通道说明存在编码异常；此处仅列出可确认的高光强度用途。顶点色同样各家不同：他的实现里 <code>VertexColor.a</code> 是描边粗细，<code>VertexColor.g</code> 是 Ramp 偏移。</p>
 <p>雪羽的《原神》风格还原进一步展示了 G 通道与分级阴影的关系：沿用《罪恶装备》的 LightMap 思路，阴影分两级，一级阴影随光照变化，二级阴影固定不变，所以不能只用一次半兰伯特切完。作者还对参考算法进行了简化，以较直接的表达实现目标效果<a class="cite" href="#ref-29">[29]</a>。</p>
 
+<figure class="diagram-figure"><pre class="mermaid">flowchart TB
+  A[&quot;共享输入：角色光、头部坐标、相机&quot;] --&gt; B[&quot;材质分区与控制贴图&quot;]
+  B --&gt; C[&quot;面部：阈值阴影与局部遮挡&quot;]
+  B --&gt; D[&quot;头发：发束明暗与方向性高光&quot;]
+  B --&gt; E[&quot;身体与服装：Ramp 与材料反射&quot;]
+  C --&gt; F[&quot;光照分量组合&quot;]
+  D --&gt; F
+  E --&gt; F
+  F --&gt; G[&quot;眼睛透显与描边 Pass&quot;]
+  G --&gt; H[&quot;曝光、调色与抗锯齿&quot;]</pre><figcaption>流程 A｜角色着色的数据依赖。Pass 顺序需结合项目渲染路径确定。</figcaption></figure>
 <h2 id="diffuse">02 / 漫反射：阈值加 Ramp</h2>
 <p>基础漫反射首先将连续的 <code>N·L</code> 映射为亮暗区域，以可调过渡控制交界，再通过 Ramp 定义暗部色彩，避免仅以亮度缩放表达阴影。</p>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+h &amp;= \tfrac12(\mathbf N\cdot\mathbf L)+\tfrac12,\\
+m &amp;= \operatorname{smoothstep}(a,\,a+\varepsilon,\,hA),\\
+\mathbf C_d &amp;= \mathbf C_{\mathrm{base}}\odot\operatorname{Ramp}(m,\,r).
+\end{aligned}</div><p class="equation-caption">式 1｜N、L 为同一空间中的单位向量；A 为区域遮罩，a 为阈值，ε 为过渡宽度，r 为材质行号。⊙ 表示逐通道相乘。</p></div>
 <pre><code>float hl   = dot(N, L) * 0.5 + 0.5;                       // 半兰伯特
 float lit  = smoothstep(_ShadowRange, _ShadowRange + _ShadowSmooth, hl * aoMask);
 float2 uv  = float2(lit, rampRow);                        // 横轴明暗，纵轴是 ILM.a 选出的材质行
@@ -60,6 +75,14 @@ float3 diffuse = albedo * shade;                          // 亮部落在 Ramp �
 <figure class="wide-figure"><img src="../assets/toon/face.svg?v=20261018-sdf" width="1120" height="440" loading="lazy" alt="面部阈值图的三个步骤：关键帧二值图、烘焙出的阈值图、运行时与光照角度比较"><figcaption>图 3｜面部阈值图从制作到使用。左：画几张不同角度的二值阴影图；中：烘焙成一张灰度图（灰度即进入阴影的角度）；右：运行时只比较大小。头部和阴影形状由程序合成，仅作示意。</figcaption></figure>
 
 <h3>阈值图的离线烘焙</h3>
+<figure class="diagram-figure"><pre class="mermaid">flowchart TB
+  A[&quot;设计不同光照角度的二值关键帧&quot;] --&gt; B[&quot;检查亮区随角度单调收缩&quot;]
+  B --&gt; C[&quot;每帧计算有符号距离场&quot;]
+  C --&gt; D[&quot;寻找相邻关键帧的正负翻转&quot;]
+  D --&gt; E[&quot;距离值插值：求过零角度&quot;]
+  E --&gt; F[&quot;将过零角度归一化为阈值 T&quot;]
+  F --&gt; G[&quot;导出线性数据纹理&quot;]</pre><figcaption>流程 B｜离线烘焙。距离场负责关键帧间的形状插值，输出纹理存储的是角度阈值。</figcaption></figure>
+
 <p>以下流程将关键帧阴影转换为单张阈值图：</p>
 <ol>
 <li>手绘或在 Blender 里用平行光渲染，得到若干个角度下的二值阴影图，比如每 15° 一张。程序渲染出来的会带上不好看的几何阴影（鼻影），要手工修。</li>
@@ -67,6 +90,11 @@ float3 diffuse = albedo * shade;                          // 亮部落在 Ramp �
 <li>相邻两张图之间对 SDF 值做线性插值（算法出处见<a class="cite" href="#ref-10">[10]</a>），找出每个像素“由亮变暗”的那个角度，这个角度就是 <code>T</code>。</li>
 <li>把所有区间的结果合成一张图。CandleSpark 的做法是先对每对关键帧做过渡图，再逐像素取平均合成<a class="cite" href="#ref-3">[3]</a>；下面的写法更直接，一次扫完所有关键帧。</li>
 </ol>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+d_k(\mathbf u)&amp;=\operatorname{EDT}(M_k)(\mathbf u)-\operatorname{EDT}(\neg M_k)(\mathbf u),\\
+\lambda&amp;=\frac{d_k}{d_k-d_{k+1}},\qquad d_k&gt;0,\ d_{k+1}\leq0,\\
+\theta_*&amp;=(1-\lambda)\theta_k+\lambda\theta_{k+1},\qquad T=\frac{\theta_*}{\pi}.
+\end{aligned}</div><p class="equation-caption">式 2｜Mₖ 为受光区域的二值掩码，距离场亮区为正、暗区为负。θ 使用弧度；下方 Python 使用角度，因此除以 180。λ 是插值距离场的过零位置，不是原几何的精确受光解。</p></div>
 <pre><code>import numpy as np
 from scipy.ndimage import distance_transform_edt as edt
 
@@ -98,6 +126,22 @@ def bake(masks, angles):
 </ul>
 
 <h3>运行时采样与光向映射</h3>
+<figure class="diagram-figure"><pre class="mermaid">flowchart TB
+  A[&quot;主光方向 + 头部正交坐标&quot;] --&gt; B[&quot;光向投影到头部水平面&quot;]
+  B --&gt; C[&quot;计算水平夹角与左右侧&quot;]
+  C --&gt; D[&quot;按左右侧选择 UV 或镜像&quot;]
+  D --&gt; E[&quot;采样面部阈值图 T&quot;]
+  C --&gt; F[&quot;夹角映射为阈值 t&quot;]
+  E --&gt; G[&quot;T 与 t 比较，形成明暗遮罩&quot;]
+  F --&gt; G
+  G --&gt; H[&quot;组合阴影色、遮挡与局部高光&quot;]</pre><figcaption>流程 C｜运行时不再计算距离变换，而是比较纹理阈值与当前光照角度。</figcaption></figure>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+\mathbf L_h&amp;=\frac{\mathbf L-\mathbf U(\mathbf L\cdot\mathbf U)}{\lVert\mathbf L-\mathbf U(\mathbf L\cdot\mathbf U)\rVert},\\
+\varphi&amp;=\arccos\!\bigl(\operatorname{clamp}(\mathbf F\cdot\mathbf L_h,-1,1)\bigr),\qquad t=\frac{\varphi}{\pi},\\
+w&amp;=f\min(t,1-t),\\
+M_{\mathrm{lit}}&amp;=\begin{cases}\operatorname{smoothstep}(t-w,t+w,T),&amp;w&gt;0,\\\mathbf1[T\geq t],&amp;w=0.\end{cases}
+\end{aligned}</div><p class="equation-caption">式 3｜F、U 分别是头部前向与上向，且应正交归一。f 控制软边；垂直入射时水平投影退化，需要回退策略。这里采用与烘焙一致的线性角度编码。</p></div>
+
 <p>需要三个向量：头部的前向、右向、上向，必须来自头部骨骼，不能用模型自身的固定轴。头骨在动画里会转，用固定轴的话脸一低头阴影就错位。mos9527 的方案是直接从骨骼取，Morgana 的 URP 复现用一个脚本把头骨的方向通过 MaterialPropertyBlock 传进 Shader<a class="cite" href="#ref-5">[5]</a><a class="cite" href="#ref-20">[20]</a>。</p>
 <pre><code>// L：指向光源的单位向量，世界空间；fwd/right/up：头部骨骼的方向
 float FaceShadow(float2 uv, float3 L, float3 fwd, float3 right, float3 up, float feather)
@@ -113,7 +157,7 @@ float FaceShadow(float2 uv, float3 L, float3 fwd, float3 right, float3 up, float
     float2 suv = float2(RL &gt;= 0 ? uv.x : 1 - uv.x, uv.y);   // 注意写 &gt;= 而不是 &gt;，避免 sign(0)=0
     float T = SAMPLE_TEXTURE2D(_FaceSDF, sampler_FaceSDF, suv).r;
 
-    float thr = 0.5 - 0.5 * FL;                    // 阈值映射，必须与烘焙时一致
+    float thr = acos(clamp(FL, -1.0, 1.0)) / PI;   // 线性角度编码，与上方 Python 烘焙一致
     float w   = feather * min(thr, 1.0 - thr);     // 过渡带随阈值向两端收窄，feather 取 0.2 到 0.5
     return w > 1e-4 ? smoothstep(thr - w, thr + w, T) : step(thr, T);
 }</code></pre>
@@ -239,6 +283,10 @@ float  NoH      = dot(N, Hnew);                                         // 后�
 
 <h2 id="light">08 / 角色光照与场景光照的协调</h2>
 <p>统一的角色主光是各材质保持一致的基础。直接采用场景主光时，环境方向与角色表情可读性可能产生冲突，因此可以将角色主光与场景光照分开控制。Tiansing 在对《终末地》的视觉分析中提出了分离式光照的解释：角色光向根据相机或演出需求调整，场景光保留整体亮度与色彩影响。该解释来自画面观察，尚不能据此确认游戏内部的灯光类型与调度方式<a class="cite" href="#ref-24">[24]</a>。</p>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+\mathbf L_{\mathrm{rig}}&amp;=\mathbf R_{\mathrm{view}}^{-1}\widehat{\mathbf l}_{\mathrm{rig}},\\
+\mathbf L_c&amp;=\operatorname{normalize}\!\left((1-\beta)\mathbf L_s+\beta\mathbf L_{\mathrm{rig}}\right),\qquad \beta\in[0,1].
+\end{aligned}</div><p class="equation-caption">式 4｜相机空间的单位灯光方向经旋转变换到世界空间，再与场景光向混合。β 是艺术控制权重；方向接近相反且混合向量趋近零时，需要回退到约定光向。</p></div>
 <pre><code>// 相机空间里的一盏固定灯：右上、偏向相机一侧（Unity 的相机看向 -Z，所以 +Z 在相机身后）
 float3 rigVS = normalize(float3(0.35, 0.55, 0.75));
 float3 rigWS = mul((float3x3)UNITY_MATRIX_I_V, rigVS);
@@ -327,4 +375,4 @@ float3 lightColor = sceneLightColor;                    // 色温和强度仍然
 <li id="ref-29"><a href="https://zhuanlan.zhihu.com/p/360229590" target="_blank" rel="noopener noreferrer">雪羽 — 原神角色渲染Shader分析还原（知乎，2021-03）</a><span>基于视觉效果还原，作者说明没有逆向原神的 Shader。LightMap 的 G 通道、一二级阴影、对崩坏3 算法的简化。</span></li>
 <li id="ref-30"><a href="https://zhuanlan.zhihu.com/p/446479066" target="_blank" rel="noopener noreferrer">网易游戏学堂 — 描边技术总览和常见商业游戏中的描边方案（下）（知乎，2022-06）</a><span>基于贴图的描边：画在贴图上、本村线与类本村线、SDF 内描边。</span></li>
 </ol>
-<div class="article-end"><a href="../index.html#journal">← 返回所有文章</a><button class="close-search" data-share>复制文章链接 ↗</button></div></article></div></main><div class="wrap"><footer class="footer"><a class="footer-logo" href="../index.html">JONNY / STUDIO</a><span class="footer-copy">© 2026 Jonny · 保持好奇，持续创造。</span><div class="footer-links"><a href="../feed.xml">RSS ↗</a><a href="#top">回到顶部 ↑</a></div></footer></div><dialog id="search-dialog" aria-label="搜索文章与实验"><div class="search-top"><input id="search-input" type="search" placeholder="搜索渲染、材质、研究…" aria-label="搜索关键词" autocomplete="off"><button class="close-search" aria-label="关闭搜索">Esc</button></div><div class="search-results" aria-live="polite"></div></dialog><div id="toast" class="toast" role="status" hidden></div><script defer src="../assets/toon-study.js?v=20261018-sdf"></script></body></html>
+<div class="article-end"><a href="../index.html#journal">← 返回所有文章</a><button class="close-search" data-share>复制文章链接 ↗</button></div></article></div></main><div class="wrap"><footer class="footer"><a class="footer-logo" href="../index.html">JONNY / STUDIO</a><span class="footer-copy">© 2026 Jonny · 保持好奇，持续创造。</span><div class="footer-links"><a href="../feed.xml">RSS ↗</a><a href="#top">回到顶部 ↑</a></div></footer></div><dialog id="search-dialog" aria-label="搜索文章与实验"><div class="search-top"><input id="search-input" type="search" placeholder="搜索渲染、材质、研究…" aria-label="搜索关键词" autocomplete="off"><button class="close-search" aria-label="关闭搜索">Esc</button></div><div class="search-results" aria-live="polite"></div></dialog><div id="toast" class="toast" role="status" hidden></div><script defer src="../assets/toon-study.js?v=20261018-sdf"></script><script defer src="../assets/vendor/katex/katex.min.js"></script><script defer src="../assets/vendor/mermaid/mermaid.min.js"></script><script defer src="../assets/article-notation.js?v=20261018"></script></body></html>

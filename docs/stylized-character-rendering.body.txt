@@ -28,8 +28,23 @@
 <p>Gaolingx 的 README 中 B 通道说明存在编码异常；此处仅列出可确认的高光强度用途。顶点色同样各家不同：他的实现里 <code>VertexColor.a</code> 是描边粗细，<code>VertexColor.g</code> 是 Ramp 偏移。</p>
 <p>雪羽的《原神》风格还原进一步展示了 G 通道与分级阴影的关系：沿用《罪恶装备》的 LightMap 思路，阴影分两级，一级阴影随光照变化，二级阴影固定不变，所以不能只用一次半兰伯特切完。作者还对参考算法进行了简化，以较直接的表达实现目标效果<a class="cite" href="#ref-29">[29]</a>。</p>
 
+<figure class="diagram-figure"><pre class="mermaid">flowchart TB
+  A[&quot;共享输入：角色光、头部坐标、相机&quot;] --&gt; B[&quot;材质分区与控制贴图&quot;]
+  B --&gt; C[&quot;面部：阈值阴影与局部遮挡&quot;]
+  B --&gt; D[&quot;头发：发束明暗与方向性高光&quot;]
+  B --&gt; E[&quot;身体与服装：Ramp 与材料反射&quot;]
+  C --&gt; F[&quot;光照分量组合&quot;]
+  D --&gt; F
+  E --&gt; F
+  F --&gt; G[&quot;眼睛透显与描边 Pass&quot;]
+  G --&gt; H[&quot;曝光、调色与抗锯齿&quot;]</pre><figcaption>流程 A｜角色着色的数据依赖。Pass 顺序需结合项目渲染路径确定。</figcaption></figure>
 <h2 id="diffuse">02 / 漫反射：阈值加 Ramp</h2>
 <p>基础漫反射首先将连续的 <code>N·L</code> 映射为亮暗区域，以可调过渡控制交界，再通过 Ramp 定义暗部色彩，避免仅以亮度缩放表达阴影。</p>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+h &amp;= \tfrac12(\mathbf N\cdot\mathbf L)+\tfrac12,\\
+m &amp;= \operatorname{smoothstep}(a,\,a+\varepsilon,\,hA),\\
+\mathbf C_d &amp;= \mathbf C_{\mathrm{base}}\odot\operatorname{Ramp}(m,\,r).
+\end{aligned}</div><p class="equation-caption">式 1｜N、L 为同一空间中的单位向量；A 为区域遮罩，a 为阈值，ε 为过渡宽度，r 为材质行号。⊙ 表示逐通道相乘。</p></div>
 <pre><code>float hl   = dot(N, L) * 0.5 + 0.5;                       // 半兰伯特
 float lit  = smoothstep(_ShadowRange, _ShadowRange + _ShadowSmooth, hl * aoMask);
 float2 uv  = float2(lit, rampRow);                        // 横轴明暗，纵轴是 ILM.a 选出的材质行
@@ -60,6 +75,14 @@ float3 diffuse = albedo * shade;                          // 亮部落在 Ramp �
 <figure class="wide-figure"><img src="../assets/toon/face.svg?v=20261018-sdf" width="1120" height="440" loading="lazy" alt="面部阈值图的三个步骤：关键帧二值图、烘焙出的阈值图、运行时与光照角度比较"><figcaption>图 3｜面部阈值图从制作到使用。左：画几张不同角度的二值阴影图；中：烘焙成一张灰度图（灰度即进入阴影的角度）；右：运行时只比较大小。头部和阴影形状由程序合成，仅作示意。</figcaption></figure>
 
 <h3>阈值图的离线烘焙</h3>
+<figure class="diagram-figure"><pre class="mermaid">flowchart TB
+  A[&quot;设计不同光照角度的二值关键帧&quot;] --&gt; B[&quot;检查亮区随角度单调收缩&quot;]
+  B --&gt; C[&quot;每帧计算有符号距离场&quot;]
+  C --&gt; D[&quot;寻找相邻关键帧的正负翻转&quot;]
+  D --&gt; E[&quot;距离值插值：求过零角度&quot;]
+  E --&gt; F[&quot;将过零角度归一化为阈值 T&quot;]
+  F --&gt; G[&quot;导出线性数据纹理&quot;]</pre><figcaption>流程 B｜离线烘焙。距离场负责关键帧间的形状插值，输出纹理存储的是角度阈值。</figcaption></figure>
+
 <p>以下流程将关键帧阴影转换为单张阈值图：</p>
 <ol>
 <li>手绘或在 Blender 里用平行光渲染，得到若干个角度下的二值阴影图，比如每 15° 一张。程序渲染出来的会带上不好看的几何阴影（鼻影），要手工修。</li>
@@ -67,6 +90,11 @@ float3 diffuse = albedo * shade;                          // 亮部落在 Ramp �
 <li>相邻两张图之间对 SDF 值做线性插值（算法出处见<a class="cite" href="#ref-10">[10]</a>），找出每个像素“由亮变暗”的那个角度，这个角度就是 <code>T</code>。</li>
 <li>把所有区间的结果合成一张图。CandleSpark 的做法是先对每对关键帧做过渡图，再逐像素取平均合成<a class="cite" href="#ref-3">[3]</a>；下面的写法更直接，一次扫完所有关键帧。</li>
 </ol>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+d_k(\mathbf u)&amp;=\operatorname{EDT}(M_k)(\mathbf u)-\operatorname{EDT}(\neg M_k)(\mathbf u),\\
+\lambda&amp;=\frac{d_k}{d_k-d_{k+1}},\qquad d_k&gt;0,\ d_{k+1}\leq0,\\
+\theta_*&amp;=(1-\lambda)\theta_k+\lambda\theta_{k+1},\qquad T=\frac{\theta_*}{\pi}.
+\end{aligned}</div><p class="equation-caption">式 2｜Mₖ 为受光区域的二值掩码，距离场亮区为正、暗区为负。θ 使用弧度；下方 Python 使用角度，因此除以 180。λ 是插值距离场的过零位置，不是原几何的精确受光解。</p></div>
 <pre><code>import numpy as np
 from scipy.ndimage import distance_transform_edt as edt
 
@@ -98,6 +126,22 @@ def bake(masks, angles):
 </ul>
 
 <h3>运行时采样与光向映射</h3>
+<figure class="diagram-figure"><pre class="mermaid">flowchart TB
+  A[&quot;主光方向 + 头部正交坐标&quot;] --&gt; B[&quot;光向投影到头部水平面&quot;]
+  B --&gt; C[&quot;计算水平夹角与左右侧&quot;]
+  C --&gt; D[&quot;按左右侧选择 UV 或镜像&quot;]
+  D --&gt; E[&quot;采样面部阈值图 T&quot;]
+  C --&gt; F[&quot;夹角映射为阈值 t&quot;]
+  E --&gt; G[&quot;T 与 t 比较，形成明暗遮罩&quot;]
+  F --&gt; G
+  G --&gt; H[&quot;组合阴影色、遮挡与局部高光&quot;]</pre><figcaption>流程 C｜运行时不再计算距离变换，而是比较纹理阈值与当前光照角度。</figcaption></figure>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+\mathbf L_h&amp;=\frac{\mathbf L-\mathbf U(\mathbf L\cdot\mathbf U)}{\lVert\mathbf L-\mathbf U(\mathbf L\cdot\mathbf U)\rVert},\\
+\varphi&amp;=\arccos\!\bigl(\operatorname{clamp}(\mathbf F\cdot\mathbf L_h,-1,1)\bigr),\qquad t=\frac{\varphi}{\pi},\\
+w&amp;=f\min(t,1-t),\\
+M_{\mathrm{lit}}&amp;=\begin{cases}\operatorname{smoothstep}(t-w,t+w,T),&amp;w&gt;0,\\\mathbf1[T\geq t],&amp;w=0.\end{cases}
+\end{aligned}</div><p class="equation-caption">式 3｜F、U 分别是头部前向与上向，且应正交归一。f 控制软边；垂直入射时水平投影退化，需要回退策略。这里采用与烘焙一致的线性角度编码。</p></div>
+
 <p>需要三个向量：头部的前向、右向、上向，必须来自头部骨骼，不能用模型自身的固定轴。头骨在动画里会转，用固定轴的话脸一低头阴影就错位。mos9527 的方案是直接从骨骼取，Morgana 的 URP 复现用一个脚本把头骨的方向通过 MaterialPropertyBlock 传进 Shader<a class="cite" href="#ref-5">[5]</a><a class="cite" href="#ref-20">[20]</a>。</p>
 <pre><code>// L：指向光源的单位向量，世界空间；fwd/right/up：头部骨骼的方向
 float FaceShadow(float2 uv, float3 L, float3 fwd, float3 right, float3 up, float feather)
@@ -113,7 +157,7 @@ float FaceShadow(float2 uv, float3 L, float3 fwd, float3 right, float3 up, float
     float2 suv = float2(RL &gt;= 0 ? uv.x : 1 - uv.x, uv.y);   // 注意写 &gt;= 而不是 &gt;，避免 sign(0)=0
     float T = SAMPLE_TEXTURE2D(_FaceSDF, sampler_FaceSDF, suv).r;
 
-    float thr = 0.5 - 0.5 * FL;                    // 阈值映射，必须与烘焙时一致
+    float thr = acos(clamp(FL, -1.0, 1.0)) / PI;   // 线性角度编码，与上方 Python 烘焙一致
     float w   = feather * min(thr, 1.0 - thr);     // 过渡带随阈值向两端收窄，feather 取 0.2 到 0.5
     return w > 1e-4 ? smoothstep(thr - w, thr + w, T) : step(thr, T);
 }</code></pre>
@@ -239,6 +283,10 @@ float  NoH      = dot(N, Hnew);                                         // 后�
 
 <h2 id="light">08 / 角色光照与场景光照的协调</h2>
 <p>统一的角色主光是各材质保持一致的基础。直接采用场景主光时，环境方向与角色表情可读性可能产生冲突，因此可以将角色主光与场景光照分开控制。Tiansing 在对《终末地》的视觉分析中提出了分离式光照的解释：角色光向根据相机或演出需求调整，场景光保留整体亮度与色彩影响。该解释来自画面观察，尚不能据此确认游戏内部的灯光类型与调度方式<a class="cite" href="#ref-24">[24]</a>。</p>
+<div class="equation-block"><div class="latex-display">\begin{aligned}
+\mathbf L_{\mathrm{rig}}&amp;=\mathbf R_{\mathrm{view}}^{-1}\widehat{\mathbf l}_{\mathrm{rig}},\\
+\mathbf L_c&amp;=\operatorname{normalize}\!\left((1-\beta)\mathbf L_s+\beta\mathbf L_{\mathrm{rig}}\right),\qquad \beta\in[0,1].
+\end{aligned}</div><p class="equation-caption">式 4｜相机空间的单位灯光方向经旋转变换到世界空间，再与场景光向混合。β 是艺术控制权重；方向接近相反且混合向量趋近零时，需要回退到约定光向。</p></div>
 <pre><code>// 相机空间里的一盏固定灯：右上、偏向相机一侧（Unity 的相机看向 -Z，所以 +Z 在相机身后）
 float3 rigVS = normalize(float3(0.35, 0.55, 0.75));
 float3 rigWS = mul((float3x3)UNITY_MATRIX_I_V, rigVS);

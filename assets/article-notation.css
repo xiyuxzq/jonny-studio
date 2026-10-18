@@ -1,0 +1,13 @@
+
+.prose .diagram-figure {padding:22px 20px 15px;background:#181818;border:1px solid #414141;border-radius:5px}
+.prose pre.mermaid {margin:0;padding:0;background:transparent;border:0;text-align:center;white-space:pre-wrap;font:12px/1.8 monospace;color:#d0d0d0}
+.prose .mermaid svg {display:block;margin:auto;max-width:100%;height:auto}
+.prose .mermaid .nodeLabel {font-weight:400}
+.prose .equation-block {padding:18px 20px 13px;background:#1b1b1b;border:1px solid #414141;border-radius:5px;margin:26px 0}
+.prose .latex-display {overflow-x:auto;overflow-y:hidden;padding:5px 0;color:#e5e5e5;font-size:15px}
+.prose .latex-display .katex-display {margin:0.65em 0}
+.prose .equation-caption {font-size:11px;line-height:1.9;color:#aaa;margin:12px 0 0}
+.prose .notation-fallback {font:12px/1.8 monospace;white-space:pre-wrap}
+@media(max-width:760px){.prose .diagram-figure{padding:15px 8px 12px}.prose .equation-block{padding:12px}.prose .latex-display{font-size:13px}}
+.prose pre.mermaid{overflow-x:auto;white-space:pre}
+.prose .mermaid svg{min-width:480px}
