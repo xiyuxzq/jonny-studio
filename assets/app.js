@@ -24,6 +24,8 @@
  document.querySelectorAll('[data-filter]').forEach(button => button.addEventListener('click', () => {
   document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
   document.querySelectorAll('.article-row').forEach(row => row.hidden = button.dataset.filter !== '全部' && row.dataset.category !== button.dataset.filter);
+  const empty = document.querySelector('#category-empty');
+  if (empty) empty.hidden = [...document.querySelectorAll('.article-row')].some(row => !row.hidden);
  }));
  document.querySelector('[data-share]')?.addEventListener('click', async () => {
   const toast = document.querySelector('#toast');
