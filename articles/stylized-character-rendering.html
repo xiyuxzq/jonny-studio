@@ -1,146 +1,330 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#121212"><title>日式角色卡通渲染体系：以《终末地》为审美参照 · Jonny Studio</title><meta name="description" content="以《终末地》为主要审美参照，结合《罪恶装备 Xrd》《原神》公开资料与社区实践，梳理日式角色的皮肤、头发、眼睛、时装与特殊材质。"><meta property="og:type" content="article"><meta property="og:title" content="日式角色卡通渲染体系：以《终末地》为审美参照 · Jonny Studio"><meta property="og:description" content="以《终末地》为主要审美参照，结合《罪恶装备 Xrd》《原神》公开资料与社区实践，梳理日式角色的皮肤、头发、眼睛、时装与特殊材质。"><link rel="icon" href="../assets/favicon.svg?v=20261018-mono" type="image/svg+xml"><link rel="stylesheet" href="../assets/style.css?v=20261018-mono"><link rel="alternate" type="application/rss+xml" title="Jonny Studio" href="../feed.xml"><script defer src="../assets/app.js?v=20261018-mono"></script></head><body id="top" data-base="../"><a class="skip" href="#main">跳到正文</a><div class="wrap"><header class="header"><a class="brand" href="../index.html" aria-label="Jonny Studio 首页"><span class="brand-mark" aria-hidden="true"></span>jonny<span style="color:var(--accent)">.</span><small>TECH ART & RENDERING</small></a><nav class="nav" aria-label="主导航"><a href="../index.html#work">实验</a><a href="../index.html#journal">文章</a><a href="../index.html#about">关于</a><button class="search-btn" data-search aria-label="搜索文章与实验"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><path d="m12 12 5 5" stroke="currentColor" stroke-width="1.4"/></svg><span>搜索</span><kbd>/</kbd></button></nav></header></div><main id="main" class="wrap"><header class="page-head survey-header"><nav class="breadcrumb" aria-label="面包屑"><a href="../index.html">首页</a><span>/</span><a href="../index.html#journal">研究与记录</a><span>/</span><span>技术综述</span></nav><div class="eyebrow">ANIME CHARACTER SHADING / 日式角色渲染</div><h1>日式角色卡通渲染体系：以《终末地》为审美参照</h1><p class="lead">以《终末地》的质感方向为主要参照，从《罪恶装备 Xrd》的作者控制到《原神》相关社区实践，建立皮肤、头发、眼睛、时装与特殊材质的研究框架。</p><div class="meta"><span>JONNY STUDIO · AI 辅助整理</span><time datetime="2026-10-18">2026.10.18</time><span>约 30 分钟 · 20 项参考资料</span></div></header><div class="survey-layout"><aside class="survey-toc" aria-label="文章目录"><span>IN THIS ARTICLE / 目录</span><a href="#cases">00 / 三个参照：动画化控制、角色分层与质感融合</a><a href="#endfield">01 / 以《终末地》为参照：研究“质感”，而非只复制色阶</a><a href="#foundation">02 / 共同基础：卡通化的是光照信息的组织方式</a><a href="#skin">03 / 皮肤与脸：先保证形状可读，再决定保留多少真实感</a><a href="#hair">04 / 头发：区分发束体积、纤维方向和设计高光</a><a href="#eyes">05 / 眼睛：视线、层次与高光必须协调</a><a href="#costume">06 / 时装：保持同一风格，同时区分不同材料</a><a href="#iridescence">07 / 镭射、虹彩与薄膜：先问清楚是哪一种光学现象</a><a href="#glints">08 / 闪点与亮片：核心是离散反射与像素足迹</a><a href="#parallax">09 / 视差与 POM：用高度场增加深度，不等于增加几何</a><a href="#outline">10 / 描边与光照整合：让各部分看起来属于同一个角色</a><a href="#pipeline">11 / UE 与 Unity：先决定接入哪里，再比较功能</a><a href="#performance">12 / 性能与稳定性：用一组可复现的画面来验收</a><a href="#practice">13 / 从知识地图走向自己的作品</a><a href="#references">参考资料与进一步阅读</a></aside><article class="prose"><div class="survey-note"><strong>公开资料综述 · 2026 年 10 月</strong><p>本文聚焦日式动画审美下的角色三渲二，包括中国团队制作的相关作品；不按开发地区划分风格。美漫的网点、排线与印刷化语言留作独立文章。基于官方文档、作者论文、主创访谈与社区作者实现整理，AI 辅助编辑。文中的原理示意图与教学代码为本站原创，另配《终末地》官网公开宣传图并逐图标注来源；不代表某款游戏的实际管线，也没有附带项目实测性能结论。</p></div>
-<p class="article-intro">本文以《明日方舟：终末地》作为当前的主要审美参照：我更偏爱在保留二次元角色辨识度的同时，让材料和光照拥有更丰富层次的方向。这是我的审美取向，不代表行业审美排名。日式角色卡通渲染的困难，往往不在于缺少某一个节点。皮肤需要干净的体积，头发需要被设计过的高光，眼睛需要明确的视线，时装又必须区分布料、皮革和金属。它们共享一个角色，却不能共用完全相同的光照响应。</p>
-<p>一个可维护的方案，需要同时回答三个问题：<strong>哪些信息用于塑造体积，哪些信息用于识别材料，哪些信息允许由美术主动控制？</strong>本文沿这条线梳理皮肤、头发、眼睛、服装与特殊材质，并把采样稳定性和性能验证放在同一张地图上。</p>
-<figure class="wide-figure"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20261013/8d941e9d4f5162941a07df3ee6bf3231.png" width="1920" height="1080" fetchpriority="high" referrerpolicy="no-referrer" alt="终末地官方干员叙事祀：洒扫庭除宣传封面，展示脸部、头发与服装配件"></a><figcaption>图 1｜主要审美参照：官方「祀：洒扫庭除」宣传封面。可观察脸部明暗、发束层次与配件响应；封面含宣传排版，不作为无后期实机或具体着色算法的证明。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a>；© HYPERGRYPH。</figcaption></figure>
-<figure class="wide-figure"><img src="../assets/toon/cover.svg" width="1200" height="530" alt="皮肤、头发、眼睛、织物、薄膜虹彩和闪点的六种原创材质概念图"><figcaption>图 2｜六类视觉任务。概念示意用于区分问题，不是六种算法的引擎渲染或物理比较。</figcaption></figure>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#121212"><title>日式角色卡通渲染拆解：从 Ramp 到面部 SDF，以终末地为参照 · Jonny Studio</title><meta name="description" content="拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，并标注终末地相关说法的依据等级。"><meta property="og:type" content="article"><meta property="og:title" content="日式角色卡通渲染拆解：从 Ramp 到面部 SDF，以终末地为参照 · Jonny Studio"><meta property="og:description" content="拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，并标注终末地相关说法的依据等级。"><link rel="icon" href="../assets/favicon.svg?v=20261018-mono" type="image/svg+xml"><link rel="stylesheet" href="../assets/style.css?v=20261018-mono"><link rel="alternate" type="application/rss+xml" title="Jonny Studio" href="../feed.xml"><script defer src="../assets/app.js?v=20261018-mono"></script></head><body id="top" data-base="../"><a class="skip" href="#main">跳到正文</a><div class="wrap"><header class="header"><a class="brand" href="../index.html" aria-label="Jonny Studio 首页"><span class="brand-mark" aria-hidden="true"></span>jonny<span style="color:var(--accent)">.</span><small>TECH ART & RENDERING</small></a><nav class="nav" aria-label="主导航"><a href="../index.html#work">实验</a><a href="../index.html#journal">文章</a><a href="../index.html#about">关于</a><button class="search-btn" data-search aria-label="搜索文章与实验"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.4"/><path d="m12 12 5 5" stroke="currentColor" stroke-width="1.4"/></svg><span>搜索</span><kbd>/</kbd></button></nav></header></div><main id="main" class="wrap"><header class="page-head survey-header"><nav class="breadcrumb" aria-label="面包屑"><a href="../index.html">首页</a><span>/</span><a href="../index.html#journal">研究与记录</a><span>/</span><span>技术综述</span></nav><div class="eyebrow">ANIME CHARACTER SHADING / 日式角色渲染</div><h1>日式角色卡通渲染拆解：从 Ramp 到面部 SDF</h1><p class="lead">以终末地为参照，把脸、头发、眼睛、描边和光照逐项拆开，给出可以照着实现的原理、公式和代码。重点是面部 SDF 阈值图。</p><div class="meta"><span>JONNY STUDIO</span><time datetime="2026-10-18">2026.10.18</time><span>约 25 分钟 · 30 项参考资料</span></div></header><div class="survey-layout"><aside class="survey-toc" aria-label="文章目录"><span>IN THIS ARTICLE / 目录</span><a href="#summary">00 / 先看结论</a><a href="#pipeline">01 / 一个角色是怎么拆开着色的</a><a href="#diffuse">02 / 漫反射：阈值加 Ramp</a><a href="#face">03 / 脸：SDF 阈值图</a><a href="#bangs">04 / 刘海投影与脸部的其余问题</a><a href="#hair">05 / 头发</a><a href="#eyes">06 / 眼睛</a><a href="#outline">07 / 描边</a><a href="#light">08 / 光照：角色光和场景光分开</a><a href="#body">09 / 衣服、皮肤和后处理</a><a href="#evidence">10 / 终末地：哪些有依据，哪些是猜的</a><a href="#practice">11 / 自己做一遍的顺序</a><a href="#references">参考资料</a></aside><article class="prose"><div class="survey-note"><strong>范围与依据</strong><p>只讨论日式动画审美下的角色三渲二。终末地官方没有公开过角色渲染的技术分享，文中涉及它的部分来自玩家拆帧、开源复现和访谈，可信度在第 10 节集中列出。HLSL 是示意代码，没有在引擎里逐行编译；Python 烘焙代码和两个交互演示在本地跑通过，数据是程序合成的，不是游戏资产。</p></div>
+<p class="article-intro">日式角色三渲二拆开看就是几件事：脸怎么保持干净，头发高光怎么出，眼睛怎么不被刘海挡住，轮廓线怎么在各种距离下保持等宽，以及这些部分怎么共用一盏灯。其中脸最特殊，现在的主流做法是 SDF 阈值图，原神、星穹铁道、少前2 都是这条路，社区里的终末地复现也是，所以本文用最多的篇幅讲它。</p>
+<p>终末地的内容只有两类来源：玩家和开发者的拆帧与复现，官方宣传图。后者只能用来看观感，不能当成实现的证据。</p>
+<figure class="wide-figure"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20261013/8d941e9d4f5162941a07df3ee6bf3231.png" width="1920" height="1080" fetchpriority="high" referrerpolicy="no-referrer" alt="终末地官方干员叙事祀：洒扫庭除宣传封面，展示脸部、头发与服装配件"></a><figcaption>图 1｜官方「祀：洒扫庭除」宣传封面。脸上的明暗交界很柔，看不到硬边的鼻影；头发高光是连续的亮带。封面含宣传排版和后期，不能当作实机着色的证据。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a><a class="cite" href="#ref-27">[27]</a>；© HYPERGRYPH。</figcaption></figure>
 
-<h2 id="cases">00 / 三个参照：动画化控制、角色分层与质感融合</h2>
-<p>《罪恶装备 Xrd》《原神》和《明日方舟：终末地》在本文承担不同的研究任务。它们不是一条已经证实的技术继承链，也不能简单排成“旧方案被新方案淘汰”。目标画面、镜头、交互和设备不同，合理的取舍也不同。</p>
-<div class="table-scroll"><table><thead><tr><th>参照</th><th>本文研究重点</th><th>证据与边界</th></tr></thead><tbody>
-<tr><td>《罪恶装备 Xrd》</td><td>如何主动设计法线、光向和明暗阈值，让三维形体服务二维动画观感</td><td>GDC 2015 原开发者技术分享。是现代三渲二的重要公开案例，不是卡通渲染的历史起源。<a class="cite" href="#ref-1">[1]</a></td></tr>
-<tr><td>《原神》</td><td>作为日式角色语言的对照，研究面部、身体、金属、高光等控制如何组织；跨平台条件如何影响系统设计</td><td>官方讲座入口确认了渲染管线与主机跨平台议题；具体角色控制另看社区作者代码，不据此反推官方全部实现。<a class="cite" href="#ref-17">[17]</a><a class="cite" href="#ref-19">[19]</a></td></tr>
-<tr><td>《明日方舟：终末地》</td><td>本文的主要审美参照：绘画感、材料辨识度与角色／环境协调</td><td>主创访谈披露美术目标及动态笔触方向；没有在这份资料中公开完整角色 Shader 配方。<a class="cite" href="#ref-18">[18]</a></td></tr>
+<h2 id="summary">00 / 先看结论</h2>
+<div class="table-scroll"><table><thead><tr><th>部位</th><th>目前常见做法</th><th>关键输入</th></tr></thead><tbody>
+<tr><td>漫反射</td><td>半兰伯特 + <code>smoothstep</code> 得到明暗，再用 Ramp 贴图给暗部上色</td><td>ILM 贴图（AO、Ramp 行号、高光遮罩）、顶点色</td></tr>
+<tr><td>脸</td><td><strong>SDF 阈值图</strong>：一张图装下所有光照角度的阴影形状，运行时一次采样加一次比较</td><td>阈值图、头部骨骼的前/右/上向量、角色光方向</td></tr>
+<tr><td>刘海投影</td><td>屏幕空间深度偏移，或把头发网格沿光向偏移后单独画一遍</td><td>头发深度/模板、光向</td></tr>
+<tr><td>头发</td><td>球面化法线压住乱法线；切线高光（Kajiya-Kay）加噪声偏移，卡通化后叠两层</td><td>头发切线、偏移噪声图、头部球心</td></tr>
+<tr><td>眼睛</td><td>固定贴图高光；用模板缓冲让眼睛透过头发显示</td><td>模板值、渲染顺序</td></tr>
+<tr><td>描边</td><td>背面外扩；法线用平滑法线，线宽在裁剪空间算，粗细由顶点色控制</td><td>平滑法线（存切线空间）、顶点色</td></tr>
+<tr><td>光照</td><td>角色光和场景光分开，角色主光方向向相机靠拢</td><td>相机矩阵、场景光颜色</td></tr>
 </tbody></table></div>
-<h3>如何阅读知乎与社区复现</h3>
-<p>社区分享往往比官方讲座更接近可动手的节点和代码，但“仿某游戏”只说明作者的目标。ashyukiha 的公开仓库直接关联其知乎文章；代码包含面部阴影图、Ramp、金属高光、轮廓光和描边等控制，可用于研究作者如何组织这些特征。它是作者自己的 URP 实现，不能当作《原神》源码或官方通道标准。<a class="cite" href="#ref-19">[19]</a></p>
-<p>本文将证据分成三层：<strong>开发者公开资料</strong>用于确认已披露的设计；<strong>社区作者实现</strong>用于学习一种可检查的复现路径；<strong>本文分析与实验建议</strong>用于提出待验证的方案。单帧画面无法证明使用了 SDF、某种 BRDF、某个 G-buffer 通道或某项后处理。知乎原文入口见参考资料，本次未能完整读取其正文，相关代码描述以作者公开仓库为准。</p>
+<p>脸是这些里面最容易做错、也最影响观感的一项，所以文章中段花最多篇幅在它上面。想看更多卡通渲染的细节技巧，MIZI 在知乎的系列是个好入口，面部篇里还整理了赛马娘的面部阴影算法<a class="cite" href="#ref-8">[8]</a>。</p>
 
-<h2 id="endfield">01 / 以《终末地》为参照：研究“质感”，而非只复制色阶</h2>
-<p>在 2024 年 12 月的机核主创访谈中，团队将方向描述为强调质感的二次元写实风格，并讨论了角色与场景的协调、经过设计的黑白灰与色彩关系，以及随光照和视角变化的绘画笔触。它提供的是创作目标和表现线索，不能据此断言某一种笔触公式或材质模型就是游戏实装。<a class="cite" href="#ref-18">[18]</a></p>
-<p><strong>我的研究判断是：</strong>如果以这个方向作为目标，核心问题就从“怎样把光照切成两段”扩展成“怎样在保持角色图形可读性的同时，让材质和空间关系可信”。增加真实感不等于把所有部分接入同一个写实模型；脸、头发、衣料与配件应分别决定保留什么、删掉什么。</p>
-<div class="table-scroll"><table><thead><tr><th>分析维度</th><th>本文建议观察什么</th><th>适合自己的验证方式</th></tr></thead><tbody>
-<tr><td>脸部可读性</td><td>明暗形状是否服务五官；细节是否破坏干净的体积</td><td>固定表情旋转主光，分别检查正面、侧面与俯仰</td></tr>
-<tr><td>头发的整体与局部</td><td>发束的大色块、设计高光与细节是否具有清楚的主次</td><td>逐项关闭细节与高光，检查大形是否依然成立</td></tr>
-<tr><td>服装材料层次</td><td>布、皮革、涂层和金属能否在相同光照下被辨认</td><td>固定基础色比较响应，避免靠颜色标签代替材料表达</td></tr>
-<tr><td>绘画感的动态稳定</td><td>笔触和明暗在转光、转头、拉远时是否仍有设计感</td><td>分开测试作者纹理、法线控制和着色调制；这些是候选实验，并非对官方算法的断言</td></tr>
-<tr><td>环境整合</td><td>角色是否既保留表情，又与环境的色温、曝光和遮挡关系协调</td><td>同一角色进入日光、阴影与室内测试场景，保持可比较的曝光条件</td></tr>
+<h2 id="pipeline">01 / 一个角色是怎么拆开着色的</h2>
+<p>一个角色通常按部位分成脸、头发、眼睛、身体、衣服几套材质，各自的 Shader 共享同一组输入：角色光方向、头部骨骼朝向、相机方向。分区信息不靠 Shader 里写死，而是烘在贴图和顶点色里，这样美术可以直接改。</p>
+<figure><img src="../assets/toon/pipeline.svg?v=20261018-sdf" width="1120" height="420" loading="lazy" alt="角色着色的五个组成部分：材质分区、漫反射、高光、描边、特殊处理"><figcaption>图 2｜角色着色的组成。示意图，不对应任何一款游戏的实际管线。</figcaption></figure>
+<p>原神系的角色会带一张 ILM（光照图），每个通道存一类信息。通道含义每个游戏都不一样，下面是两份公开实现里的写法，对照着看就明白为什么说“别照搬通道约定”：</p>
+<div class="table-scroll"><table><thead><tr><th>通道</th><th>原神系（Gaolingx 的 URP 实现）<a class="cite" href="#ref-13">[13]</a></th><th>星穹铁道系（LiKira 的复现）<a class="cite" href="#ref-4">[4]</a></th></tr></thead><tbody>
+<tr><td>R</td><td>高光类型分层，按值域区分</td><td>AO 区域，常暗，不随光变化</td></tr>
+<tr><td>G</td><td>二级阴影遮罩，不随光向变化的常驻阴影</td><td>高光区域；脸部用 SDF 图的 G 通道做眼部阴影遮罩</td></tr>
+<tr><td>B</td><td>高光强度遮罩</td><td>高光遮罩</td></tr>
+<tr><td>A</td><td>Ramp 行号，决定暗部颜色</td><td>Ramp 的 V 偏移，选部位的漫反射颜色</td></tr>
 </tbody></table></div>
-<p>这张表是我从目标审美推导的研究与验收框架，不是对三款游戏逐帧测量后的结论。实际对照应记录官方影像的版本、镜头与光照条件，并区分宣传片、过场和可操作画面；不能把不同曝光和后期下的截图直接当作材质优劣比较。</p>
-<div class="takeaway"><strong>本文的技术主线</strong>先用《罪恶装备 Xrd》理解作者控制，再用社区角色分层实践建立可调系统，最后围绕《终末地》偏好的质感与环境融合方向验证自己的画面。后文的皮肤、头发、眼睛、时装和特殊材质，都服务于这个目标；不追求堆满效果。</div>
+<p>Gaolingx 的 README 里 B 通道的说明有乱码，我只能确认它与高光强度有关。顶点色同样各家不同：他的实现里 <code>VertexColor.a</code> 是描边粗细，<code>VertexColor.g</code> 是 Ramp 偏移。</p>
+<p>雪羽在知乎上的原神还原对 G 通道的用法更能说明问题：沿用《罪恶装备》的 LightMap 思路，阴影分两级，一级阴影随光照变化，二级阴影固定不变，所以不能只用一次半兰伯特切完。她还提到崩坏3 的原始算法很绕，自己改成了更直接的写法，认为没有必要那么复杂<a class="cite" href="#ref-29">[29]</a>。</p>
 
-<h2 id="foundation">02 / 共同基础：卡通化的是光照信息的组织方式</h2>
-<p>Cel Shading 常从明暗分层开始，但完整角色风格还依赖模型比例、法线、颜色、阴影形状、描边、动画与镜头。《Guilty Gear Xrd》的 GDC 2015 分享直接把定制着色器与为其制作的模型放在一起讨论，并强调对阈值、光向量、法线的艺术控制。这说明造型与着色应一起设计，而不是在任意模型上套一个 Ramp 就结束。<a class="cite" href="#ref-1">[1]</a></p>
-<figure><img src="../assets/toon/pipeline.svg" width="1120" height="450" loading="lazy" alt="角色卡通渲染的五层结构：几何法线、明暗分层、材质响应、光照整合、采样输出"><figcaption>图 3｜本文建议的分析框架。五层共享规则，但可分别调试。</figcaption></figure>
-<p>以一个方向光为例，可以先把连续的法线光照量映射成可控的亮暗区域：</p>
-<pre><code>// 教学伪代码：仅说明单主光的明暗分层，不是完整着色器。
-float s = dot(normalize(N), normalize(L)); // N、L 必须位于同一空间
-float width = max(artistFeather, max(fwidth(s), 1e-4));
-float litMask = smoothstep(threshold - width, threshold + width, s);
-float3 bodyColor = lerp(shadowColor, litColor, litMask);
-// 后续还需分别处理阴影可见性、光色、环境光、高光与输出转换。</code></pre>
-<p><code>threshold</code>改变明暗覆盖，<code>artistFeather</code>控制设计上的软硬；<code>fwidth</code>提供局部像素尺度的过渡参考。它能缓解这一维阈值的部分锯齿，但不能保证解决阴影贴图、法线高频、轮廓或时间闪烁等所有问题。</p>
-<div class="interactive-figure" aria-label="可调光源的明暗分层教学演示"><div class="interactive-title"><span>INTERACTIVE / 明暗分层</span><span>同一球面 · 同一光向</span></div><canvas id="toon-ramp" width="900" height="330" role="img" aria-label="连续漫反射、硬阈值与带过渡分层的球面示意"></canvas><div class="ramp-control"><label for="toon-light">光源角度 <output id="toon-angle">35°</output></label><input id="toon-light" type="range" min="-85" max="85" step="1" value="35"></div><p>CPU 生成的理想球面示意，未计算投影、GI 或物理高光；用于观察光向与分层关系。</p><noscript>开启 JavaScript 后可调节光源角度。</noscript></div>
-<p>Unity Toon Shader 将基础色、第一阴影色、第二阴影色及控制贴图分开组织，可作为参数设计的参考。颜色贴图与阈值、遮罩等数据贴图也应按各自语义设置色彩空间；不要把所有纹理统一当作 sRGB。<a class="cite" href="#ref-2">[2]</a></p>
+<h2 id="diffuse">02 / 漫反射：阈值加 Ramp</h2>
+<p>最基础的一步是把连续的 <code>N·L</code> 切成亮暗两块，边界留一点可调的过渡，再让暗部的颜色从 Ramp 贴图里取，而不是单纯压黑。</p>
+<pre><code>float hl   = dot(N, L) * 0.5 + 0.5;                       // 半兰伯特
+float lit  = smoothstep(_ShadowRange, _ShadowRange + _ShadowSmooth, hl * aoMask);
+float2 uv  = float2(lit, rampRow);                        // 横轴明暗，纵轴是 ILM.a 选出的材质行
+float3 shade = SAMPLE_TEXTURE2D(_Ramp, sampler_Ramp, uv).rgb;   // Ramp 的 Wrap Mode 必须是 Clamp
+float3 diffuse = albedo * shade;                          // 亮部落在 Ramp 最右端，值为白</code></pre>
+<p>几个细节来自两份实现：Ramp 的 Wrap Mode 要设成 Clamp，否则边缘会采到另一端的颜色，出现噪点<a class="cite" href="#ref-4">[4]</a>；原神的 Ramp 把明暗交界放在偏右的位置，亮部那一大段几乎没有变化，直接去掉，省带宽也给美术留了空间；Ramp 分白天和夜晚两组行，用一个开关切换<a class="cite" href="#ref-13">[13]</a>。暗部泛红、泛冷这类“假次表面散射”就是直接画在 Ramp 里的。</p>
+<p>色彩空间要分开处理：Ramp 和基础色是 sRGB，ILM、阈值图、各种遮罩是线性数据，导入时关掉 sRGB，否则 Gamma 会把数值扭曲<a class="cite" href="#ref-7">[7]</a>。</p>
+<div class="interactive-figure" aria-label="明暗分层教学演示"><div class="interactive-title"><span>INTERACTIVE / 明暗分层</span><span>同一球面 · 同一光向</span></div><canvas id="toon-ramp" width="900" height="330" role="img" aria-label="连续漫反射、硬阈值与带过渡分层的球面示意"></canvas><div class="ramp-control"><label for="toon-light">光源角度 <output id="toon-angle">35°</output></label><input id="toon-light" type="range" min="-85" max="85" step="1" value="35"></div><p>CPU 生成的理想球面，只有一盏方向光，没有投影和环境光。三个球用同一组数据：左边是连续的 <code>N·L</code>，中间是硬阈值，右边是带过渡的阈值。</p><noscript>开启 JavaScript 后可调节光源角度。</noscript></div>
+<p>这套思路的源头可以追到《罪恶装备 Xrd》。它的美术风格分享里讲到：模型的法线是手工调过的，让明暗边界落在画师想要的位置；光向量也可以按镜头和角色单独调；再用阈值贴图和顶点色在局部推移阴影边界；描边除了背面外扩，还有画在贴图上的“本村线”。Qian Kanglai 照着公开资料在 Unity 里复现过一版，结论是整体就是 Blinn-Phong 加 Toon，参数全由贴图驱动<a class="cite" href="#ref-1">[1]</a><a class="cite" href="#ref-2">[2]</a>。后来的原神系做法是同一个思路的工业化：把手工调的东西固化成 ILM、Ramp 和顶点色。ashyukiha 在知乎配套的开源 URP 实现，把面部阴影图、Ramp、金属高光和描边都放在一起，适合对着代码读<a class="cite" href="#ref-23">[23]</a>。</p>
+<p>但脸不能用这套办法。</p>
 
-<h2 id="skin">03 / 皮肤与脸：先保证形状可读，再决定保留多少真实感</h2>
-<h3>皮肤并不等于“写实 SSS 加一道阈值”</h3>
-<p>在日式动画语言内部，先确定目标更偏平涂动画、插画体积，还是强调材料质感的方向。以本文对《终末地》的审美偏好为例，应研究如何保留干净的脸，同时增加恰当的体积与环境联系；不能先把写实皮肤的全部高频信息搬进来。平涂方向可能更重视肤色、面部阴影形状和局部红润；偏写实方向才更需要细分粗糙度、法线与次表面散射。Epic 的 Subsurface、Subsurface Profile 等模型提供不同的散射表达，它们是实现选项，不是卡通皮肤必选项。<a class="cite" href="#ref-3">[3]</a></p>
-<p>建议将脸部拆成三组控制：第一组决定大体积，例如额头、脸颊和下颌的明暗；第二组决定局部色彩，例如腮红、唇色与眼周；第三组决定材料提示，例如鼻尖或嘴唇的受控高光。不要让细小皮肤法线把整张脸的明暗边界切碎。</p>
-<h3>法线控制与面部阴影控制图解决不同问题</h3>
-<p>编辑着色法线会改变光照响应，但不会自动改变几何轮廓或阴影贴图中的遮挡。要消除鼻梁附近不理想的暗块，可以考虑专用法线、局部阈值或面部阴影控制图；具体选哪一种，应依据侧脸、俯仰和表情动画的表现判断。</p>
-<p>常被称作“面部 SDF”的流程，可能使用真正的距离场，也可能使用随光向阈值变化的作者控制纹理。<strong>不要只看到名称就假定输入有统一数学含义。</strong>以下给出一种组织思路，而非某商业游戏的还原：先将主光转入头部局部坐标，再按左右光选择对应纹理或镜像，最后把方向参数映射为纹理阈值。纹理编码、比较正负与映射曲线必须在制作工具和着色器之间约定。</p>
-<figure><img src="../assets/toon/face.svg" width="1120" height="420" loading="lazy" alt="头部局部坐标、面部阴影控制纹理和设计阴影合成的三步示意"><figcaption>图 4｜面部控制流程示意。这里的轮廓与纹理只是解释数据流，不是可直接使用的脸部 SDF。</figcaption></figure>
-<p>头部骨骼变换、负缩放、左右手坐标和“光线传播方向／指向光源方向”的约定都可能导致反向。头顶光与背光还需要独立策略，不能默认仅靠一个水平角就能覆盖。设计阴影也不能替代真实遮挡：刘海、手臂和外部物体的投影是否进入脸部、以多大强度进入，需另定规则。</p>
-<div class="takeaway"><strong>验收重点</strong>固定表情，让头部和主光分别旋转；检查正脸、侧脸、俯仰、背光，以及刘海投影。先验证光照在头部空间连续，再调颜色。</div>
+<h2 id="face">03 / 脸：SDF 阈值图</h2>
+<h3>为什么 N·L 做不了脸</h3>
+<p>人脸的法线起伏太大。鼻梁、眼窝、下颌线处的法线变化剧烈，用 <code>N·L</code> 加阈值切出来，边界是破碎的：鼻子在脸颊上投出一块奇怪的黑，下颌线锯齿状，侧光时眼眶整个被吞掉<a class="cite" href="#ref-7">[7]</a>。动画里的脸不是这样的，它的阴影是几块干净的形状，光转动时整体平滑地推过去。</p>
+<p>MIZI 的面部篇把常见方案分成三类：修改法线、距离场阴影、Matcap<a class="cite" href="#ref-8">[8]</a>。Yu-ki016 的说法更简短：目前卡通脸部光照主要是修改法线和使用 SDF 贴图两条路，新出的二游基本都用 SDF<a class="cite" href="#ref-9">[9]</a>。</p>
+<p>改法线有三种做法，问题也都类似：</p>
+<ul>
+<li><strong>球形包裹体法线。</strong>把一个球的法线传递到脸上，阴影形状就是球的阴影。操作简单，但只能得到球的形状。</li>
+<li><strong>改拓扑再改法线。</strong>《罪恶装备》和《蓝色协议》的做法：把脸的布线改成目标阴影的形状，再逐点调法线。能得到理想的形状，但很费工，而且两种阴影形态之间会跳变。罪恶装备视角固定可以忽略，蓝色协议里就能明显看出来。</li>
+<li><strong>拉平法线或画法线贴图。</strong>修改后的法线不连续，同样有跳变<a class="cite" href="#ref-8">[8]</a>。</li>
+</ul>
+<p>Matcap 在光源不动时可以直接用来切分光影，七つの大罪的技术分享就这么做，理由是动画里的阴影更看重情绪表达而非物理正确<a class="cite" href="#ref-8">[8]</a>。光一动它就用不了。</p>
+<p>SDF 路线正好相反：形状完全由画出来的图决定，不同形态之间自然过渡。MIZI 提到这个方法最早用在脸上的出处不明，疑似来自米哈游的技术分享，原神里确实在用<a class="cite" href="#ref-8">[8]</a>。张洋铭整理的流程是：美术画关键帧，经过 SDF 插值输出阴影贴图<a class="cite" href="#ref-12">[12]</a>。</p>
+<h3>阈值图里存的是什么</h3>
+<p>这张图的每个像素存一个数 <code>T</code>，含义是：<strong>光从正前方转到多少度时，这个点进入阴影，除以 180°</strong>。运行时只要算出当前光的角度 <code>φ</code>，拿 <code>T</code> 去比：<code>T &gt; φ/π</code> 就是亮，否则是暗。光从 0° 转到 180°，每个像素在恰好的那一刻变暗，整体看来就是阴影形状在脸上平滑推过。</p>
+<p>这样做的好处是把“逐像素算光照”变成了“整个头部共用一个角度”。mos9527 的说法很直接：着色只和光照角度有关，相当于对一块法线一致的平面打光<a class="cite" href="#ref-5">[5]</a>。</p>
+<p>有一个常被混淆的名字问题。真正的 SDF（有符号距离场）只出现在<strong>烘焙阶段</strong>，用来把几张关键帧插值成中间形状；运行时用的这张图，CandleSpark 称之为“SDF 过渡图”，它的灰度是一组等高线，每条等高线对应一个光照角度下的明暗分界。他特别提醒：初学者别把过渡图当成严格的 SDF 去理解，两者不是一回事<a class="cite" href="#ref-3">[3]</a>。网上说“脸部 SDF 贴图”指的几乎都是这张过渡图。</p>
+<figure class="wide-figure"><img src="../assets/toon/face.svg?v=20261018-sdf" width="1120" height="440" loading="lazy" alt="面部阈值图的三个步骤：关键帧二值图、烘焙出的阈值图、运行时与光照角度比较"><figcaption>图 3｜面部阈值图从制作到使用。左：画几张不同角度的二值阴影图；中：烘焙成一张灰度图（灰度即进入阴影的角度）；右：运行时只比较大小。头部和阴影形状由程序合成，仅作示意。</figcaption></figure>
 
-<h2 id="hair">04 / 头发：区分发束体积、纤维方向和设计高光</h2>
-<p>风格化头发首先需要清楚的发束体积。发束的亮暗分层可以与脸部共享主光方向，但高光通常需要专用控制。纤维散射模型与发束上的图形化亮带是两种不同表达，不应因为都叫“各向异性”就混用。</p>
-<div class="table-scroll"><table><thead><tr><th>路线</th><th>主要输入</th><th>适合表达</th><th>需要接受的限制</th></tr></thead><tbody><tr><td>方向性高光近似</td><td>切线、光向、视向、粗糙度与遮罩</td><td>随光与视角变化的纤维方向感</td><td>切线不连续会造成高光断裂；简单模型不等于完整毛发散射</td></tr><tr><td>作者控制的亮带</td><td>发束 UV、控制纹理、偏移与形状参数</td><td>连贯、可设计的动画亮带</td><td>稳定性由映射与镜头测试决定，不自然等同于真实反射</td></tr><tr><td>MatCap</td><td>视空间方向映射、预渲染材质图与遮罩</td><td>快速形成统一的材质印象</td><td>与真实光源、遮挡不天然一致，镜头滚转需检查</td></tr></tbody></table></div>
-<p>Unity Toon Shader 的 Angel Ring 明确是一种具有固定相机观察位置特征的发光泽控制，并有第二套 UV 等具体要求；它与任意“头发亮带”并不是同义词。MatCap 则利用预渲染球体图表达材料与光照，官方也提供相机滚转稳定等控制。<a class="cite" href="#ref-4">[4]</a><a class="cite" href="#ref-5">[5]</a></p>
-<p>如果研究真实纤维响应，可从方向性高光近似进一步阅读 Disney 的毛发散射模型；该论文面向生产路径追踪，不能把完整模型的开销或适用性直接转移到手游发片。学习时应明确自己要保留哪一种视觉线索，而不是机械增加波瓣。<a class="cite" href="#ref-6">[6]</a></p>
-<p><strong>调试顺序建议：</strong>先关掉高光检查发束体积；再显示切线方向；再只开一个高光分量；最后加入局部遮罩、颜色和次级亮带。发根到发梢的 UV 压缩、左右发束镜像和 LOD 切换，要与旋转镜头一起检查。</p>
-
-<figure><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20260714/e4c3c1219db9fe092bbb6a8df8bc265a.png" width="1920" height="1080" loading="lazy" referrerpolicy="no-referrer" alt="终末地官方干员叙事诀：履旧尘宣传封面中的头发、眼睛与脸部近景"></a><figcaption>图 5｜官方「诀：履旧尘」宣传封面。将发束大形、局部亮带和眼睛焦点放在一起观察；单帧只能分析视觉结果，不能判断高光随光向或视向的变化规律。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a>；© HYPERGRYPH。</figcaption></figure>
-<h2 id="eyes">05 / 眼睛：视线、层次与高光必须协调</h2>
-<p>眼睛虽小，却是角色表情的视觉锚点。把全部信息画在一个平面上可以获得明确的风格，但侧视时可能缺少深度；加入角膜、虹膜与折射又会增加模型、UV 和着色之间的耦合。Unity HDRP 的 Eye Shader 将角膜折射、虹膜等作为眼部表达的一部分；Epic 也提醒 Eye 模型对几何和 UV 存在较强依赖。<a class="cite" href="#ref-7">[7]</a><a class="cite" href="#ref-3">[3]</a></p>
-<figure><img src="../assets/toon/eye.svg" width="1120" height="440" loading="lazy" alt="卡通眼球角膜高光、虹膜、瞳孔与眼白的分层剖面示意"><figcaption>图 6｜眼球分层概念，不按解剖比例绘制。风格化实现可以删减层次，但需明确每层负责什么。</figcaption></figure>
-<p>表面高光负责提示角膜曲面，虹膜负责颜色与深度，瞳孔负责视线焦点，眼白则需要与脸部处在同一光照关系中。作者绘制的固定高光与动态高光可以共存，但要约束亮度和数量，避免出现两个互相冲突的主光源。</p>
-<p>低成本方案可使用单层不透明眼球、受控的虹膜 UV 偏移和高光贴图；这属于视差或反射近似，不应称为真实角膜折射。更完整的分层方案则要验证排序、边界遮挡、深度、透明开销，以及双眼在极端视角下的变化。</p>
-<div class="takeaway"><strong>验收重点</strong>固定头部让眼球转动，再固定眼球让镜头转动。检查瞳孔是否漂移、虹膜是否滑出边界、眼睑遮挡是否正确，以及暗环境中的眼白是否过亮。</div>
-
-<h2 id="costume">06 / 时装：保持同一风格，同时区分不同材料</h2>
-<p>对本文追求的质感方向，时装是重点研究对象。同一套服装可以共享明暗色阶，但不能把布、皮革、金属全部压成同一个高光。材料区别应来自可识别的响应，而不是只换 Base Color。下面是本文建议的分析起点，不是固定生产参数：</p>
-<div class="table-scroll"><table><thead><tr><th>材料</th><th>优先保留的线索</th><th>可研究的控制</th><th>常见误判</th></tr></thead><tbody><tr><td>棉布／粗织物</td><td>柔和体积、弱镜面、适量表面纤维感</td><td>粗糙度、织纹尺度、绒光</td><td>用强法线把布做成砂纸</td></tr><tr><td>缎面／丝质</td><td>随方向变化的长条高光</td><td>切线、各向异性、主次高光关系</td><td>把“更亮”当作“更像丝绸”</td></tr><tr><td>绒面</td><td>与观察和光照相关的柔软边缘响应</td><td>Sheen、纤维取向与覆盖</td><td>用无光照依赖的 Fresnel 加色代替所有纤维散射</td></tr><tr><td>皮革／涂层</td><td>表层反射、底层颜色与褶皱尺度</td><td>粗糙度分布、涂层与法线层级</td><td>所有褶皱都使用同样锐利的镜面</td></tr><tr><td>金属／饰件</td><td>反射色、环境结构与形状</td><td>粗糙度、环境反射、艺术高光</td><td>只提高 Metallic，却没有可读的反射环境</td></tr></tbody></table></div>
-<p>Disney 的 Principled BRDF 提供了以少量直观参数组织材料响应的思路；Practical Volumetric Sheen 则针对表面纤维散射提出专门模型。二者可以帮助区分“通用材料控制”和“特定纤维现象”，但并不规定卡通服装必须完整采用它们。<a class="cite" href="#ref-8">[8]</a><a class="cite" href="#ref-9">[9]</a></p>
-<p>织纹至少存在两种尺度：近景可以看见纱线结构，远景则更多表现为整体光泽、颜色和粗糙度。直接对高频纹理做阈值，可能把这些结构变成闪烁；一味模糊又可能丢失材料特征。研究时应把“平均颜色保持”和“高光分布保持”分开观察。</p>
-<p>工程上可以共享材质功能模块，但不必追求一个吞下全部效果的巨型 Shader。独立的皮肤、头发和眼部路径，以及按需启用的服装特征，往往更容易说明数据依赖。是否拆分材质槽，还要结合绘制调用、状态切换和维护成本评估。</p>
-
-<h2 id="iridescence">07 / 镭射、虹彩与薄膜：先问清楚是哪一种光学现象</h2>
-<p>特殊材质应服从角色整体的面积、亮度与色彩层级，不是每个日式角色都需要虹彩、闪点或 POM。以下是可选的材料研究，不表示上述游戏全部采用。<br>“镭射”在美术沟通中常指彩色、随角度变化的表面，并非唯一的物理类别。选方案前，先看参考中的颜色如何跟随光源、视线和表面方向变化。</p>
-<div class="table-scroll"><table><thead><tr><th>参考特征</th><th>候选机制</th><th>实现方向</th></tr></thead><tbody><tr><td>油膜、肥皂膜式的颜色变化</td><td>薄膜干涉</td><td>膜厚与折射率控制的光谱响应或经过验证的查表近似</td></tr><tr><td>光盘、光栅或微结构条纹的色散</td><td>衍射相关效应</td><td>考虑微结构方向、光向与视向的模型或有针对性的近似</td></tr><tr><td>主要要求设计感与配色变化</td><td>艺术化虹彩</td><td>视角／光角驱动的渐变、LUT、遮罩与高光组合</td></tr></tbody></table></div>
-<p>Belcour 与 Barla 的研究将薄膜效应扩展到微表面框架，并处理光谱变化在 RGB 渲染中的积分问题。薄膜颜色不只是一个 <code>1 - N·V</code> 彩虹：它还与膜厚、界面介质以及光照几何有关。镜面微表面情形通常需要围绕参与反射的微表面方向评估；不能把宏观视角渐变当作等价物。<a class="cite" href="#ref-10">[10]</a></p>
-<p>反过来，艺术化渐变是合理的成本与风格选择。只要命名清楚、测试条件明确，它可以比复杂光学模型更适合特定设计。衍射也有独立的波动光学研究，不应把一切彩虹表面都写成“薄膜干涉”。<a class="cite" href="#ref-11">[11]</a></p>
-<figure><img src="../assets/toon/optics.svg" width="1120" height="430" loading="lazy" alt="薄膜干涉、离散闪点与视差遮挡的三种原理示意"><figcaption>图 7｜薄膜研究光的干涉，闪点研究离散反射事件，POM研究视线与高度场的交点。它们可叠加，但不是同一件事。</figcaption></figure>
-<p><strong>测试建议：</strong>固定相机只转光，再固定光只转相机；分别观察颜色变化。遮掉大部分基础高光后再看虹彩分量，确认它究竟依赖什么，避免用大面积 Emissive 掩盖材料关系。</p>
-
-<h2 id="glints">08 / 闪点与亮片：核心是离散反射与像素足迹</h2>
-<p>闪点的可信度来自“少量微小反射体恰好将光反射向镜头”。固定噪声位置可以避免贴图无故游动，但仅有稳定噪声还不够：光向、视向、微片法线、大小与密度都会影响可见性。</p>
-<p>Deliot 与 Belcour 的实时闪点研究，以像素覆盖区域中有多少微片满足反射条件为核心，并处理任意像素足迹的统计。这为近远距离的视觉连续性提供研究线索；论文中的速度比较有自己的测试条件，不应转写成某引擎或某手机的固定收益。<a class="cite" href="#ref-12">[12]</a></p>
-<p>实用方案可以分成三档：少量、足够大的装饰亮片用显式几何或实例；亚像素闪点用带过滤和统计考虑的程序化或贴图模型；极远处逐步退化为整体镜面响应。切换时需要控制平均亮度与闪点密度，而不是把每一个远处亮点都粗暴放大。</p>
-<p>要区分两种“闪”：一种是视角变化引起的正确闪烁，另一种是采样不足造成的时域不稳定。TAA 可能把前者抹平，也可能掩盖后者，不能作为唯一修复手段。高亮裁剪、曝光与 Bloom 还会改变闪点的尺寸印象。</p>
-<div class="takeaway"><strong>验收重点</strong>同一表面慢速旋转、镜头缓慢拉远；对比抗锯齿开关与分辨率变化，记录亮点数量、平均亮度、拖影和稳定帧耗时。</div>
-
-<h2 id="parallax">09 / 视差与 POM：用高度场增加深度，不等于增加几何</h2>
-<p>法线贴图主要改变表面受光；视差映射则随视线调整纹理采样位置。POM 进一步沿切线空间视线搜索高度场，近似找到遮挡交点。PlayCanvas 的官方文档清楚区分了普通视差与 occlusion 模式，并列出采样数量等控制。<a class="cite" href="#ref-13">[13]</a></p>
-<p>一种高度场约定下，局部偏移量可以概括为 <code>Δuv ∝ heightScale × Vts.xy / Vts.z</code>；但正负、参考平面和高度范围必须按坐标与纹理约定确定。接近掠射角时分母趋近零，需要淡出、截断或其他退化策略。这个比例关系不是可直接复制的完整 POM 实现。</p>
-<ul><li><strong>采样一致：</strong>颜色、法线与其他表面数据需要使用一致的位移坐标，否则“深度”与“反光”会分离。</li><li><strong>导数与过滤：</strong>包含分歧的搜索循环中，隐式纹理导数可能不合适；可研究在循环前保存梯度并显式采样，但要按目标着色语言与平台验证。</li><li><strong>边界：</strong>基础高度场 POM 不改变网格外轮廓；UV 越界、镜像接缝和薄片侧面要单独处理。</li><li><strong>深度与阴影：</strong>虚拟交点、写入深度偏移、投影与自阴影是不同功能，不能因为 UV 已偏移就认为它们自动正确。</li></ul>
-<p>在时装上，局部徽章、较厚织纹或凹槽可作为候选；对大面积、经常掠射观察的衣摆，实际几何有时更直接。POM 的开销随覆盖像素、步数、纹理访问和分歧变化，不能仅凭多边形减少就断言更快。远处回退普通法线是一个需要对比验证的选项。</p>
-
-<h2 id="outline">10 / 描边与光照整合：让各部分看起来属于同一个角色</h2>
-<p>反向外壳描边通过额外几何与剔除规则形成外轮廓；屏幕空间描边则可利用深度、法线或其他缓冲识别边缘。前者要处理硬边接缝、薄片与距离尺度，后者要处理深度缺失、内轮廓噪声和抗锯齿。它们都可以配合控制遮罩，不必对眼眶、睫毛、皮肤和衣服使用同一线宽。UTS 的入门文档就以眼部局部线宽控制举例。<a class="cite" href="#ref-14">[14]</a></p>
-<p>多光源是另一个需要明确的风格决策：若每个灯都独立生成强烈的二值亮区，叠加后可能失去层级。可以设定主光负责体积，辅光只提供有限颜色或高光提示；也可以选择其他规则，但要让脸、头发、眼睛与服装共同遵守。</p>
-<p>建议在明确的线性光照流程中组合分量，并单独控制艺术颜色的输入方式。曝光、色调映射和 Bloom 会影响最终色阶：过曝可能吃掉亮暗差异，过强泛光可能让布料像自发光。调试时保留一个固定曝光、关闭额外后期的基准视图。</p>
-
-<h2 id="pipeline">11 / UE 与 Unity：先决定接入哪里，再比较功能</h2>
-<p>同样的材质原理，落在不同渲染管线里，能得到的光源、阴影、深度和反射信息不同。不要把一段数学表达式与一个可交付的 Shader 系统画等号。</p>
-<div class="table-scroll"><table><thead><tr><th>接入方式</th><th>优点</th><th>需要补齐的能力</th></tr></thead><tbody><tr><td>Unlit 中自定义颜色／光照</td><td>快速验证分层与艺术控制</td><td>不会自动拥有完整的场景光照、阴影与反射，需要明确传入或实现</td></tr><tr><td>现有材质／官方 Toon 框架扩展</td><td>能利用既有工具、特征和资源约定</td><td>核对版本、渲染路径、阴影及平台支持，不假定所有模型都能任意混合</td></tr><tr><td>自定义着色模型或渲染 Pass</td><td>可更深地参与光照与输出</td><td>引擎维护、G-buffer／前向路径、阴影和多平台一致性</td></tr><tr><td>后处理卡通化</td><td>便于快速建立整体风格试验</td><td>通常难以从最终画面完整恢复皮肤、头发和眼部各自需要的信息</td></tr></tbody></table></div>
-<p>Epic 的着色模型文档适合核查已有 Hair、Cloth、Eye 等模型的输入与依赖；Unity 的 UTS 文档则适合研究卡通特征的组织。NiloCat 的公开 URP Toon 示例明确定位为教学样例，可作为理解自定义受光 Shader 的入口，而非未经验证就用于完整生产。<a class="cite" href="#ref-3">[3]</a><a class="cite" href="#ref-14">[14]</a><a class="cite" href="#ref-15">[15]</a></p>
-<p>本文引用的文档包含特定版本和预览包。实际落地需以项目所用版本为准；不宣称这些接口在所有 UE、Unity 版本或手机渲染路径中都相同。</p>
-
-<h2 id="performance">12 / 性能与稳定性：用一组可复现的画面来验收</h2>
-<p>卡通渲染的简单色块不代表它天然便宜。额外描边、发片覆盖、眼部透明层、POM 搜索和高频闪点，仍可能成为瓶颈。移动 GPU 与 PC 的实际表现也不能从一个“指令数量”直接推导。</p>
-<div class="table-scroll"><table><thead><tr><th>检查对象</th><th>观察方式</th><th>可尝试的退化策略</th></tr></thead><tbody><tr><td>脸部与头发明暗</td><td>主光和头部各转一圈；近、中、远景</td><td>降低远景细节，保留大体积和关键高光</td></tr><tr><td>头发与眼部覆盖</td><td>逐层关闭，观察 GPU Pass 与像素覆盖</td><td>减少透明叠层；对比不透明／裁剪方案的画质与代价</td></tr><tr><td>闪点与细织纹</td><td>慢速运动、分辨率与抗锯齿对比</td><td>按像素尺度过滤，逐步回归整体材料响应</td></tr><tr><td>POM 与特殊分量</td><td>固定镜头逐项关闭；检查掠射角</td><td>按距离、覆盖和质量档控制，保留明确的普通材质回退</td></tr><tr><td>描边与阴影</td><td>检查几何通道、分辨率与状态切换</td><td>减弱次要内部线条，按画面重要性安排质量</td></tr></tbody></table></div>
-<p>Ben Golus 对网格着色器的研究展示了一个重要方法：同样“画出线条”，不同过滤方式在远处、斜视和细线合并时会产生不同结果。这类问题应以像素覆盖和信号频率分析，而不只是增加平滑节点。<a class="cite" href="#ref-16">[16]</a></p>
-<p>建议每个实验保存设备、引擎版本、构建方式、分辨率、画质、抗锯齿、曝光、镜头和场景规模；比较 CPU／GPU 帧耗时、相关 Pass 与尖峰，同时保留画质对比。纹理大小、采样数、带宽、填充、分支和材质状态共同影响结果。没有真实测试前，不写“手游通用”“零成本”或固定毫秒收益。</p>
-
-<h2 id="practice">13 / 从知识地图走向自己的作品</h2>
-<p>以本文的审美方向作为目标，第一件作品可以是一个简化的日式角色半身材质研究：优先验证干净的脸、可读的发束和两三种服装材料；不必从完整游戏角色开始。如果目标是先补渲染能力，也可以缩小到一个头部或布片，完成“基线 → 单一现象 → 稳定性 → 成本”的闭环。第一轮只验证共同的明暗规则；第二轮只深入一种材料；第三轮再加入一项特殊效果。不要在同一轮同时承担模型、绑定、布料模拟、PCG和完整场景。</p>
-<ol><li><strong>基础层：</strong>可解释地控制法线、主光和分层边界。</li><li><strong>材料层：</strong>选择织物、头发或眼睛中的一种，建立同条件比较。</li><li><strong>特殊层：</strong>从虹彩、闪点或POM选一项，说明采用物理模型还是艺术近似。</li><li><strong>交付层：</strong>一段视觉展示、一组调试对比、一份实现局限与性能记录。</li></ol>
-<blockquote>专业程度体现在：能说明画面中的现象、选择了哪一种近似，以及这个选择在什么条件下仍然成立。</blockquote>
-<p>本文是研究入口。后续具体作品应补上自己的代码、输入资产、版本条件和实测数据，让综述逐步连接到可复现的实验。</p>
-
-<h2 id="references">参考资料与进一步阅读</h2>
-<p class="source-note">以下包含官方文档、论文作者资料、开发者公开分享、主创一手访谈及社区作者实现，查询日期为 2026-10-18。不同资料的目标与版本不同，离线光学论文不等于已验证的实时移动方案。官方宣传配图仅用于相关视觉评论，保留原图署名与标识；其余原理图为本站原创，未转载论文插图。官方图片通过原站链接展示，不打包为本站资产。</p>
-<ol class="references">
-<li id="ref-1"><a href="https://www.ggxrd.com/Motomura_Junya_GuiltyGearXrd.pdf" target="_blank" rel="noopener noreferrer">Junya Christopher Motomura — GuiltyGear Xrd’s Art Style（GDC 2015）</a><span>角色造型、法线、光向与阈值的艺术控制。另见 <a href="https://www.arcsystemworks.com/guilty-gear-xrds-art-style-the-x-factor-between-2d-and-3d-talk-from-gdc-2015-is-now-available-online/" target="_blank" rel="noopener noreferrer">Arc System Works 官方发布页</a>。</span></li>
-<li id="ref-2"><a href="https://github.com/Unity-Technologies/com.unity.toonshader/blob/master/com.unity.toonshader/Documentation~/Basic.md" target="_blank" rel="noopener noreferrer">Unity Toon Shader — Three Color Map and Control Map Settings</a><span>基础色、阴影色、阴影控制图与色彩空间约定。</span></li>
-<li id="ref-3"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/shading-models-in-unreal-engine" target="_blank" rel="noopener noreferrer">Epic Games — Shading Models in Unreal Engine</a><span>Subsurface、Hair、Cloth、Eye 等内置模型及其输入。</span></li>
-<li id="ref-4"><a href="https://github.com/Unity-Technologies/com.unity.toonshader/blob/master/com.unity.toonshader/Documentation~/AngelRing.md" target="_blank" rel="noopener noreferrer">Unity Toon Shader — Angel Ring Projection Settings</a><span>特定发光泽控制的行为与资源要求。</span></li>
-<li id="ref-5"><a href="https://github.com/Unity-Technologies/com.unity.toonshader/blob/master/com.unity.toonshader/Documentation~/MatCap.md" target="_blank" rel="noopener noreferrer">Unity Toon Shader — Material Capture Settings</a><span>MatCap 的预渲染表达、混合与相机控制。</span></li>
-<li id="ref-6"><a href="https://www.disneyanimation.com/publications/a-practical-and-controllable-hair-and-fur-model-for-production-path-tracing/" target="_blank" rel="noopener noreferrer">Chiang et al. — A Practical and Controllable Hair and Fur Model（2015）</a><span>面向生产路径追踪的毛发散射研究。</span></li>
-<li id="ref-7"><a href="https://docs.unity3d.com/Packages/com.unity.render-pipelines.high-definition@14.0/manual/eye-shader.html" target="_blank" rel="noopener noreferrer">Unity HDRP 14 — Eye Shader</a><span>眼部结构与相应渲染特征。</span></li>
-<li id="ref-8"><a href="https://www.disneyanimation.com/publications/physically-based-shading-at-disney/" target="_blank" rel="noopener noreferrer">Brent Burley — Physically-Based Shading at Disney（2012）</a><span>以直观参数组织材料响应的基础阅读。</span></li>
-<li id="ref-9"><a href="https://www.disneyanimation.com/publications/practical-volumetric-sheen/" target="_blank" rel="noopener noreferrer">Zeltner, Burley &amp; Chiang — Practical Volumetric Sheen</a><span>表面纤维散射与绒光模型。</span></li>
-<li id="ref-10"><a href="https://belcour.github.io/blog/research/publication/2017/05/01/brdf-thin-film.html" target="_blank" rel="noopener noreferrer">Belcour &amp; Barla — A Practical Extension to Microfacet Theory for Varying Iridescence（2017）</a><span>薄膜干涉、RGB 光谱积分与微表面模型。</span></li>
-<li id="ref-11"><a href="https://arxiv.org/abs/1705.06086" target="_blank" rel="noopener noreferrer">Werner et al. — Scratch Iridescence（2017）</a><span>微结构衍射的波动光学研究。</span></li>
-<li id="ref-12"><a href="https://ggx-research.github.io/publication/2023/06/09/publication-glints.html" target="_blank" rel="noopener noreferrer">Deliot &amp; Belcour — Real-Time Rendering of Glinty Appearances（HPG 2023）</a><span>离散微片、像素足迹与统计计数。</span></li>
-<li id="ref-13"><a href="https://developer.playcanvas.com/user-manual/graphics/physical-rendering/parallax-mapping/" target="_blank" rel="noopener noreferrer">PlayCanvas — Parallax Mapping</a><span>视差与遮挡模式的官方说明。</span></li>
-<li id="ref-14"><a href="https://github.com/Unity-Technologies/com.unity.toonshader/blob/master/com.unity.toonshader/Documentation~/GettingStarted.md" target="_blank" rel="noopener noreferrer">Unity Toon Shader — Getting Started</a><span>明暗分层、轮廓线与发部特征的组合。</span></li>
-<li id="ref-15"><a href="https://github.com/ColinLeung-NiloCat/UnityURPToonLitShaderExample" target="_blank" rel="noopener noreferrer">NiloCat — Unity URP Toon Lit Shader Example</a><span>作者公开的简化教学示例，非完整生产框架。</span></li>
-<li id="ref-16"><a href="https://bgolus.medium.com/the-best-darn-grid-shader-yet-727f9278b9d8" target="_blank" rel="noopener noreferrer">Ben Golus — The Best Darn Grid Shader (Yet)（2023）</a><span>程序化图案过滤、远景细线与摩尔纹问题。</span></li>
-<li id="ref-17"><a href="https://learning.unity3d.jp/7260/" target="_blank" rel="noopener noreferrer">Unity Learning Materials — 「原神」におけるコンソールプラットフォーム開発</a><span>2021-06-15 发布，为 Unite Seoul 2020 讲座日语配音版。讲者 Zhenzhong Yi；官方页面介绍渲染管线与主机跨平台议题，本页不作为具体角色算法的证明。</span></li>
-<li id="ref-18"><a href="https://www.gcores.com/articles/192321" target="_blank" rel="noopener noreferrer">Wing／机核编辑部 — 与《明日方舟：终末地》主创海猫、hyf 的访谈（2024-12-16）</a><span>关于二次元写实方向、角色与场景协调和动态绘画笔触的一手访谈。对应当时测试阶段，不能替代后续版本的完整技术披露。本文仅作短篇转述，不转载原文与图片。</span></li>
-<li id="ref-19"><a href="https://github.com/ashyukiha/GenshinCharacterShaderZhihuVer" target="_blank" rel="noopener noreferrer">ashyukiha — GenshinCharacterShaderZhihuVer</a><span>社区作者自己公开的 URP 仿原神着色器，非官方方案。作者仓库关联的 <a href="https://zhuanlan.zhihu.com/p/360229590" target="_blank" rel="noopener noreferrer">知乎原文入口</a> 本次未能完整读取；本文关于具体控制的描述以公开代码为依据，不照搬通道约定。</span></li>
-<li id="ref-20"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官方网站 — 影像资料</a><span>「祀：洒扫庭除」与「诀：履旧尘」干员叙事宣传封面。查询日期 2026-10-18；图像权利归 HYPERGRYPH，仅作为本文审美分析的视觉参照，非本站实现效果。</span></li>
+<h3>怎么烘焙</h3>
+<p>流程是固定的：</p>
+<ol>
+<li>手绘或在 Blender 里用平行光渲染，得到若干个角度下的二值阴影图，比如每 15° 一张。程序渲染出来的会带上不好看的几何阴影（鼻影），要手工修。</li>
+<li>对每张二值图求 SDF：亮区内取正、暗区内取负，边界处为零。</li>
+<li>相邻两张图之间对 SDF 值做线性插值（算法出处见<a class="cite" href="#ref-10">[10]</a>），找出每个像素“由亮变暗”的那个角度，这个角度就是 <code>T</code>。</li>
+<li>把所有区间的结果合成一张图。CandleSpark 的做法是先对每对关键帧做过渡图，再逐像素取平均合成<a class="cite" href="#ref-3">[3]</a>；下面的写法更直接，一次扫完所有关键帧。</li>
 </ol>
-<div class="article-end"><a href="../index.html#journal">← 返回所有文章</a><button class="close-search" data-share>复制文章链接 ↗</button></div></article></div></main><div class="wrap"><footer class="footer"><a class="footer-logo" href="../index.html">JONNY / STUDIO</a><span class="footer-copy">© 2026 Jonny · 保持好奇，持续创造。</span><div class="footer-links"><a href="../feed.xml">RSS ↗</a><a href="#top">回到顶部 ↑</a></div></footer></div><dialog id="search-dialog" aria-label="搜索文章与实验"><div class="search-top"><input id="search-input" type="search" placeholder="搜索渲染、材质、研究…" aria-label="搜索关键词" autocomplete="off"><button class="close-search" aria-label="关闭搜索">Esc</button></div><div class="search-results" aria-live="polite"></div></dialog><div id="toast" class="toast" role="status" hidden></div><script defer src="../assets/toon-study.js?v=20261018-mono"></script></body></html>
+<pre><code>import numpy as np
+from scipy.ndimage import distance_transform_edt as edt
+
+def signed(lit):                      # lit: bool，True = 受光
+    return edt(lit) - edt(~lit)       # 亮区为正，暗区为负，边界处过零
+
+def bake(masks, angles):
+    """masks: 各关键帧二值图，亮区随角度增大而缩小；angles: 对应角度（度，升序）。
+    返回 T：该像素进入阴影时的光照角度 / 180。"""
+    S = np.stack([signed(m) for m in masks]).astype(np.float64)
+    a = np.asarray(angles, np.float64)
+    T = np.full(S.shape[1:], np.nan)
+    T[S[0] &lt;= 0] = a[0] / 2                        # 第一帧就已在阴影里
+    T[S[-1] &gt; 0] = (a[-1] + 180) / 2               # 最后一帧仍然受光
+    for k in range(len(a) - 1):
+        s0, s1 = S[k], S[k + 1]
+        hit = (s0 &gt; 0) &amp; (s1 &lt;= 0)                 # 亮暗在 k 与 k+1 之间翻转
+        ang = a[k] + s0 / (s0 - s1 + 1e-12) * (a[k + 1] - a[k])
+        T[hit] = ang[hit]
+    return T / 180</code></pre>
+<p>我用合成的椭球头做过验证（亮区边界已知），每 15° 一张关键帧，烘出来的 <code>T</code> 与解析解的平均误差约 0.7°，最大 7° 出现在贴近脸颊边缘处。真正做脸时，误差主要来自关键帧画得不够单调，而不是算法。</p>
+<p>几个制作上的要点，来自几篇文章的共同经验：</p>
+<ul>
+<li><strong>每个像素必须单调变化。</strong>亮区要随角度只缩不涨，否则某像素在 30° 亮、60° 暗、90° 又亮，就没法用一个阈值表示。EmiteInna 把这点说得最清楚<a class="cite" href="#ref-6">[6]</a>。</li>
+<li><strong>0° 和 180° 两张关键帧必须有。</strong>缺了全亮或全暗那张，会在正面光时鼻尖留一块三角阴影，光稍微偏一点，阴影就从鼻子一侧跳到另一侧；背光时同理出现亮斑。CandleSpark 提到原神和星穹铁道也有这个现象，游戏里很少正脸对光所以不明显，绝区零干脆取消了鼻尖三角<a class="cite" href="#ref-3">[3]</a>。</li>
+<li><strong>形状本身要人来设计。</strong>鼻子不该向脸颊投影，下颌线要画成向上弯的弧线而不是几何给出的直线，眼眶要比周围略亮<a class="cite" href="#ref-7">[7]</a>。</li>
+<li><strong>SDF 不必是精确的欧氏距离。</strong>只要过渡平滑、单调即可。EmiteInna 用曼哈顿距离的广度优先搜索、甚至图像软件里的模糊做过实验，效果可以接受<a class="cite" href="#ref-6">[6]</a>。需要线性时间的精确算法，常用的是 8SSEDT：不知道像素在阴影内还是外，就扫两遍，先假设在内、再假设在外，两遍结果相减就是有符号距离<a class="cite" href="#ref-12">[12]</a><a class="cite" href="#ref-10">[10]</a>。GPU 上可以用 Saito 算法，把关键帧累加成台阶图，再用对应图的 SDF 求到上一级台阶和下一级台阶的距离<a class="cite" href="#ref-11">[11]</a>。</li>
+<li><strong>分辨率至少 512，建议 1024；关掉 sRGB；别压缩。</strong>Gamma 会把阈值扭曲<a class="cite" href="#ref-7">[7]</a>，压缩会破坏边缘上的数值<a class="cite" href="#ref-8">[8]</a>。</li>
+</ul>
+
+<h3>运行时怎么用</h3>
+<p>需要三个向量：头部的前向、右向、上向，必须来自头部骨骼，不能用模型自身的固定轴。头骨在动画里会转，用固定轴的话脸一低头阴影就错位。mos9527 的方案是直接从骨骼取，Morgana 的 URP 复现用一个脚本把头骨的方向通过 MaterialPropertyBlock 传进 Shader<a class="cite" href="#ref-5">[5]</a><a class="cite" href="#ref-20">[20]</a>。</p>
+<pre><code>// L：指向光源的单位向量，世界空间；fwd/right/up：头部骨骼的方向
+float FaceShadow(float2 uv, float3 L, float3 fwd, float3 right, float3 up, float feather)
+{
+    // 去掉上下分量，只看水平面内的光向。光正好在头顶时长度趋近零，要给个回退
+    float3 Lh = L - up * dot(L, up);
+    Lh = normalize(Lh + 1e-5 * fwd);
+
+    float FL = dot(fwd, Lh);                       // cos φ，φ 为光与正前方的夹角
+    float RL = dot(right, Lh);                     // 正负决定光在左边还是右边
+
+    // 图只画了一侧：光在另一侧时水平翻转 UV。翻转方向取决于你的贴图画的是哪一侧
+    float2 suv = float2(RL &gt;= 0 ? uv.x : 1 - uv.x, uv.y);   // 注意写 &gt;= 而不是 &gt;，避免 sign(0)=0
+    float T = SAMPLE_TEXTURE2D(_FaceSDF, sampler_FaceSDF, suv).r;
+
+    float thr = 0.5 - 0.5 * FL;                    // 阈值映射，必须与烘焙时一致
+    float w   = feather * min(thr, 1.0 - thr);     // 过渡带随阈值向两端收窄，feather 取 0.2 到 0.5
+    return w > 1e-4 ? smoothstep(thr - w, thr + w, T) : step(thr, T);
+}</code></pre>
+<p>其中有几处是实现时才会撞上的：</p>
+<ul>
+<li><strong>阈值映射有两种常见写法，必须和烘焙对上。</strong>一种是 <code>thr = 0.5 - 0.5·cosφ</code>（半兰伯特形式，被很多教程采用，CandleSpark 的节点图也是这个），另一种是 <code>thr = φ/π</code>（线性于角度，本文的 Python 代码和演示用的是这个）。两种都要求 <code>f(0)=0</code>、<code>f(π/2)=0.5</code>、<code>f(π)=1</code>且单调，函数形状只影响阴影推进的节奏<a class="cite" href="#ref-3">[3]</a>。</li>
+<li><strong>垂直方向的光被丢掉了。</strong>投影到水平面意味着光源上下移动，脸部阴影纹丝不动，这是故意的：光源高度一变，几何阴影就会出现不好看的形状，丢掉它画面反而整齐<a class="cite" href="#ref-3">[3]</a>。如果项目确实需要处理垂直光，知乎上有 360° 的 SDF 方案，但制作成本高很多<a class="cite" href="#ref-9">[9]</a>。</li>
+<li><strong>过渡带要随阈值收窄。</strong>软边宽度不能是常数。阈值接近 0 或 1 时（正面光和背光），固定宽度的过渡带会越过灰度范围，光一偏阴影就整块跳变。CandleSpark 建议宽度向两端收窄，且本身别超过 0.05，否则阴影位置会明显偏移<a class="cite" href="#ref-3">[3]</a>。秋大叔的终末地复刻用的是同一个思路：<code>smoothstep(max(0, 2f-1), min(1, 2f), sdf)</code>，其中 <code>f</code> 是 0 到 1 的阈值。这个窗口以 <code>f</code> 为中心，半宽恰好是 <code>min(f, 1-f)</code>，也就是上面代码里 <code>feather = 1</code> 的情形<a class="cite" href="#ref-28">[28]</a>。</li>
+<li><strong>左右翻转要求脸模对称。</strong>脸模不对称，就得画左右两张图，或者接受一点不匹配<a class="cite" href="#ref-5">[5]</a>。</li>
+<li><strong>LiKira 的星穹铁道版本</strong>另外用图的 G 通道做了眼部阴影遮罩，把眼睛区域强制抬亮，防止脸在阴影里眼睛也跟着变黑<a class="cite" href="#ref-4">[4]</a>。</li>
+</ul>
+
+<div class="interactive-figure" aria-label="面部阈值图教学演示"><div class="interactive-title"><span>INTERACTIVE / 面部阈值图</span><span>同一个头 · 同一盏灯</span></div><canvas id="toon-face" width="900" height="330" role="img" aria-label="法线加阈值、烘焙出的阈值图、阈值图与角度比较三种脸部明暗对比"></canvas><div class="ramp-control"><label for="face-az" style="min-width:9em">光源水平角 <output id="face-az-out">50°</output></label><input id="face-az" type="range" min="-180" max="180" step="1" value="50"></div><div class="ramp-control" style="margin-top:8px"><label for="face-el" style="min-width:9em">光源仰角 <output id="face-el-out">20°</output></label><input id="face-el" type="range" min="-60" max="80" step="1" value="20"></div><p>左：椭球加一个鼻梁凸起，用 <code>N·L</code> 切出明暗，鼻梁两侧出现杂乱的块。中：本页在浏览器里用上面 Python 的同一套流程烘出来的阈值图 <code>T</code>，白线是当前角度的 <code>T = φ/π</code> 等值线。右：<code>T</code> 与角度比较的结果，过渡带宽度随角度向两端收窄。拖动仰角，只有左图会变；右图不变是设计如此。数据由程序合成，不是任何游戏的脸。</p><noscript>开启 JavaScript 后可调节光源方向。</noscript></div>
+
+<h3>脸上还要补的几处</h3>
+<p>阈值图只解决了“阴影形状”。秋大叔复刻终末地的脸时，在它上面补了这些东西，大多数 SDF 脸都会遇到<a class="cite" href="#ref-28">[28]</a>：</p>
+<ul>
+<li><strong>背光补偿。</strong>角色背对光、正对镜头时，按阈值算脸会整个变黑。他把一个补偿量加到光与前向的余弦上：<code>backLight = saturate(-dot(camFwd.xz, L.xz)) * saturate(-FL)</code>，补偿量取 <code>0.5 - 0.5·FL²</code>，再把 <code>FL + backLight × 补偿</code> 送进阈值映射。身体的漫反射里用的是同一套背光补偿，这样脸和身体不会脱节。</li>
+<li><strong>脸和脖子的衔接。</strong>脖子是另一套 Shader，光照分布和脸不同，交界处会出现一条缝。做法是用一张区域遮罩，脸取 SDF 算出的明暗，靠近脖子的部分渐变为模型法线的 <code>N·L</code>。作者说即使这样处理，仍然留有一点缝。</li>
+<li><strong>SSS 和边缘光的范围。</strong>脸的模型比较特殊，直接用 <code>1 - N·V</code> 得不到日式风格，要用贴图限制范围。边缘光则从 SDF 图的另一个通道重新还原一个假法线来算。</li>
+<li><strong>两个通道存 SDF。</strong>他拆到的图把 x、y 两个通道平均后当阈值用，z 通道用来还原假法线。他的猜测是为了优化，但自己也说不确定。</li>
+<li><strong>鼻尖与嘴唇高光。</strong>如风的拆帧里，嘴唇高光是单独一张图，鼻尖高光放在下巴 AO 图的 A 通道；脸的最终明暗是 SDF 结果乘 AO<a class="cite" href="#ref-22">[22]</a>。鼻尖高光也可以用同样的 SDF 方法做：光在正侧方时最亮，所以阈值要变成侧光为 0、正面和背光为 1，即 <code>abs(dot(Lh, fwd) * 0.5 + 0.5 - 0.5) * 2</code>，另一侧用 UV 遮罩屏蔽<a class="cite" href="#ref-8">[8]</a>。</li>
+</ul>
+
+<h3>SDF 阈值图的局限和补救</h3>
+<ul>
+<li><strong>没有垂直方向的变化。</strong>前面说过这是故意的，但如果项目要处理，Yu-ki016 做过 360° 的方案：画好各个光照方向的二值图（他画了 9×7+2 共 65 张，花了一周空闲时间），各自转成 SDF，拼成图集，运行时按光源的两个角度算 UV，采样四次插值。这个方案成立有一个条件：后一张的亮区必须覆盖前一张，也就是单调性。很多工具把 255 个插值结果累加进一张图来省空间，累加会破坏插值信息，水平轴方案里无伤大雅，全角度方案里就会出错<a class="cite" href="#ref-9">[9]</a>。</li>
+<li><strong>软阴影和变形区域。</strong>MIZI 指出纯 SDF 的两个问题：过渡会有色阶感；曲率不同或 UV 拉伸的地方，软硬交接会不一致<a class="cite" href="#ref-8">[8]</a>。阴影边界落在眼睛、嘴这类会变形的区域时，纯 SDF 还会随表情被拉伸。赛马娘的做法（Cygames Tech Conference）是用类似 SDF 的方式只画特征区域，再和修正后的法线光照混合，这样变形区域的边界不会被拉伸。分享里没讲具体算法，MIZI 给了一版自己的还原<a class="cite" href="#ref-8">[8]</a>。</li>
+<li><strong>脸型本身。</strong>卡通角色在较低 FOV 下好看，第三人称常用的高 FOV 会让面部轮廓变形。很多模型的正脸会做扁，一部分原因就是抵消这个变形<a class="cite" href="#ref-8">[8]</a>。</li>
+</ul>
+
+<h2 id="bangs">04 / 刘海投影与脸部的其余问题</h2>
+<p>阈值图只负责脸自己的明暗。头发投到脸上的影子是另一件事。动画里常见和发型形状相似的脸上阴影，但真实的阴影贴图在很多角度下投出来很难看，所以通常先把头发对脸的投影去掉，再用 trick 补一个好看的<a class="cite" href="#ref-17">[17]</a>。常见做法有两种：</p>
+<ul>
+<li><strong>屏幕空间偏移。</strong>早期做法是给头发或脸写模板，在屏幕空间偏移后做模板测试。延迟渲染下更简单：做脸的着色时，把屏幕空间深度偏移一小段，和头发深度比较，头发更近就判为被遮挡<a class="cite" href="#ref-17">[17]</a>。</li>
+<li><strong>投影网格。</strong>把刘海网格复制一份，沿光向偏移后画一遍，只写到脸上。Morgana 的复现里有一个专门的 <code>BangsShadowSimple</code> 就是这样做的<a class="cite" href="#ref-20">[20]</a>。秋大叔复刻终末地时，截帧里直接拿到一个已经错位好的刘海模型，用模板渲染即可；他让阴影强度随“日光直射强度”变化，主光不直射时就去掉<a class="cite" href="#ref-28">[28]</a>。如风的拆帧也提到前额阴影有偏移，前刘海似乎是半透明处理<a class="cite" href="#ref-22">[22]</a>。</li>
+</ul>
+<div class="takeaway"><strong>踩坑</strong>投影的偏移距离要随相机距离缩放，否则镜头一拉远，刘海影子就变得比脸还大。偏移方向用的光向要和脸部阈值图用同一个角色光，不然两处的阴影方向会打架。</div>
+
+<h2 id="hair">05 / 头发</h2>
+<p>头发要先解决形体，再做高光。</p>
+<h3>先把法线压平</h3>
+<p>发片网格的法线通常是乱的，直接拿来算明暗会碎成一堆小块。常见做法是把法线朝一个球面拉：取头部中心作球心，用位置减球心得到球面法线，再按遮罩混合。Morgana 的复现里叫“法向压平，模拟圆柱”，球心由脚本从骨骼取，混合量由 ORM 贴图的 R 通道控制<a class="cite" href="#ref-20">[20]</a>。</p>
+<pre><code>float3 sphereN = normalize(positionWS - _HeadCenterWS);
+float3 hairN   = normalize(lerp(N, sphereN, _Flatten * mask));</code></pre>
+<h3>高光：切线加噪声偏移</h3>
+<p>头发上那条亮带（俗称天使环）是许多根发丝高光叠出来的。用一张面片代替发丝时，普通法线高光是个点，叠不出环。Kajiya-Kay 的做法是用发丝方向（切线）代替法线来算高光：发丝近似圆柱，法线在圆周上没有唯一值，但切线是确定的。强度由切线和半角向量夹角的正弦决定，再用指数收窄<a class="cite" href="#ref-15">[15]</a>。</p>
+<pre><code>float3 ShiftTangent(float3 T, float3 N, float shift) { return normalize(T + N * shift); }
+
+float StrandSpec(float3 T, float3 V, float3 L, float exponent)
+{
+    float3 H    = normalize(L + V);
+    float  TdotH = dot(T, H);
+    float  sinTH = sqrt(saturate(1.0 - TdotH * TdotH));
+    float  atten = smoothstep(-1.0, 0.0, TdotH);         // 压掉背向的那一半
+    return atten * pow(sinTH, exponent);
+}
+
+float n    = tex2D(_ShiftTex, uv * _ShiftTiling).r - 0.5;          // 噪声让亮带边缘参差
+float wide = StrandSpec(ShiftTangent(T, hairN, _Shift1 + n * _Strength), V, L, _Exp1);   // 宽、软
+float thin = StrandSpec(ShiftTangent(T, hairN, _Shift2 + n * _Strength), V, L, _Exp2);   // 窄、亮
+float band = smoothstep(_Cut - _Soft, _Cut + _Soft, wide + thin);                      // 卡通化</code></pre>
+<p>三点说明。第一，原文的 <code>shift</code> 偏移沿法线方向推切线，作用是把亮带整体上下移动；噪声图是再叠一层扰动，让亮带不那么圆润<a class="cite" href="#ref-15">[15]</a>。第二，切线必须沿发丝方向，所以头发 UV 的排布很关键：V 方向要沿发根到发梢。有 MMD 复现终末地渲染的作者提到，所用二游模型的 UV 很好，各向异性高光因此能发挥出来，高低频两层高光叠加的效果很出众<a class="cite" href="#ref-19">[19]</a>。第三，两层叠加的写法就是上面的 <code>wide</code> 和 <code>thin</code>：偏移和指数不同，一层宽软，一层窄亮。</p>
+<p>Morgana 的复现里还有一个细节：高光不是直接出白色，而是用一张 LUT 上色，横轴是角度、纵轴是位置，所以亮带从发根到发梢可以有颜色变化<a class="cite" href="#ref-20">[20]</a>。</p>
+<h3>终末地的头发高光为什么在任何角度都好看</h3>
+<p>Tiansing 在游戏里观察到，服装和头发的高光方向只跟随相机，类似摄影里的补光灯，让角色在光照不丰富时也有清晰的轮廓<a class="cite" href="#ref-24">[24]</a>。秋大叔复刻时给出了一种具体写法：造一盏从相机打向角色的虚拟灯，按“日光直射强度”和真正的主光混合，再用混合后的灯算半角向量<a class="cite" href="#ref-28">[28]</a>。</p>
+<pre><code>// camFwd 取 UNITY_MATRIX_V[2].xyz，指向相机身后，也就是“朝向相机的方向”
+float  fy       = lerp(0.5, L.y, _DayStrength);
+float3 fwdLight = normalize(float3(camFwd.x, fy, camFwd.z));
+float3 Lnew     = L * _DayStrength + 2.0 * fwdLight;                   // 直射强度为 0 时只剩相机灯
+float3 Hnew     = normalize(V * (2.0 + _DayStrength) + Lnew);
+float  NoH      = dot(N, Hnew);                                         // 后面照常走 GGX</code></pre>
+<p>他对比了用与不用的 <code>N·H</code> 分布：用了之后，高光不再有明显的斜上方光源感。头发的做法也在同一篇里<a class="cite" href="#ref-28">[28]</a>：</p>
+<ul>
+<li>高光用的平滑法线存在法线贴图的 z、w 通道，漫反射仍用模型法线。</li>
+<li>为了做出游戏里整齐平行的高光，他把法线中与相机右向重合的分量去掉，让法线只在前和上两个方向变化：<code>n = normalize(n - dot(n, camRight) * camRight)</code>。他自己称这是“下策”，因为调光源一直做不出游戏里的整齐效果。</li>
+<li>给视线的 y 分量加一个偏移，可以整体上下移动高光位置。</li>
+<li>高光用一张美术准备的颜色贴图着色，再叠第二次 Kajiya-Kay 算一圈光晕。</li>
+</ul>
+<p>这些是复刻者按截帧反推的，不是官方实现。MMD 复现终末地渲染的作者也提到各向异性高光配合高低频两层叠加效果很好<a class="cite" href="#ref-19">[19]</a>。</p>
+<figure><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20260714/e4c3c1219db9fe092bbb6a8df8bc265a.png" width="1920" height="1080" loading="lazy" referrerpolicy="no-referrer" alt="终末地官方干员叙事诀：履旧尘宣传封面中的头发、眼睛与脸部近景"></a><figcaption>图 4｜官方「诀：履旧尘」宣传封面。头发大块的明暗很稳定，亮带集中在发束上半部。单帧只能看结果，不能判断它是随光还是随相机。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a>；© HYPERGRYPH。</figcaption></figure>
+
+<h2 id="eyes">06 / 眼睛</h2>
+<p>卡通眼睛的高光一般直接画在贴图上，不跟着光走，因为眼神光是角色表情的一部分。Morgana 的复现里，眼睛做了两件事：角膜法线球面化，加一个 MatCap 高光，另外有一些颜色处理<a class="cite" href="#ref-20">[20]</a>。结构上不需要真的做角膜折射，这是性价比问题。</p>
+<p>真正麻烦的是<strong>让眼睛透过刘海显示</strong>。日式动画里眼睛永远不会被头发挡住，3D 里要靠渲染顺序和模板缓冲做到。常见做法是这样的顺序：</p>
+<ol>
+<li>先画脸、身体、眼睛等不透明部分。</li>
+<li>再画头发，头发的 Pass 里写模板值：<code>Stencil { Ref 1 Comp Always Pass Replace }</code>。只有通过深度测试的头发像素才会写入 1，被脸挡住的后脑头发不会写。</li>
+<li>最后画一个眼睛的叠加 Pass：<code>ZTest Always</code>，<code>Stencil { Ref 1 Comp Equal }</code>，半透明混合。这样眼睛只在被头发盖住的像素上显示出来。</li>
+</ol>
+<p>日式卡通渲染基础技术和 Project Sekai 三周年的图形更新里都讲过这类做法，后者列了两种：一种是眼睛 <code>ZTest Always</code> 再用头发做遮罩，另一种是先写眼睛的模板值、画头发时再按模板判断<a class="cite" href="#ref-16">[16]</a>。我上面写的是第一种的模板版本，细节需要自己对着项目的渲染队列调。</p>
+<div class="takeaway"><strong>踩坑</strong>叠加 Pass 用了 <code>ZTest Always</code>，所以闭眼时必须同步关掉，否则眼睛会透过眼睑和头发显示出来。头发和脸之外的前景物体（比如手）要在头发之前画，才不会被眼睛盖住。</div>
+
+<h2 id="outline">07 / 描边</h2>
+<p>背面外扩的原理：同一个网格再画一遍，剔除正面（<code>Cull Front</code>），顶点沿法线向外推，输出描边色。深度测试保证只有推出轮廓之外的部分可见，看起来就是一圈线。基础版有一串问题，silence394 的文章把它们依次解决了，下面是处理顺序<a class="cite" href="#ref-14">[14]</a>（LiKira 的描边代码则主要来自 NiloCat 的教学示例<a class="cite" href="#ref-26">[26]</a>）：</p>
+<ol>
+<li><strong>近大远小。</strong>在模型空间外扩，距离固定，拉远后线变得断断续续，拉近又太粗。改在裁剪空间推，并乘 <code>posCS.w</code> 抵消透视除法，线宽在屏幕上就固定了。</li>
+<li><strong>非均匀缩放。</strong>带缩放的矩阵作用在法线上会让它不再垂直于表面，描边在某些位置消失。法线要用逆转置矩阵变换，Unity 的 <code>TransformObjectToWorldNormal</code> 已经处理了这点。</li>
+<li><strong>横竖线宽不一致。</strong>NDC 空间被屏幕宽高比拉伸，横向要乘 <code>height/width</code> 修正。</li>
+<li><strong>远处线还是太粗。</strong>屏幕等宽的代价是物体缩小后线宽不变，按距离做衰减。</li>
+<li><strong>硬边处断裂。</strong>立方体 6 个面 24 个顶点，同一位置的顶点法线各不相同，外扩后各走各的，棱角处裂开。要用平滑法线：离线把同位置顶点的法线求平均，存起来用。</li>
+</ol>
+<pre><code>Varyings OutlineVert(Attributes v)
+{
+    // 平滑法线存在切线空间里（比如压进 UV2/UV3），这里还原到模型空间。
+    // 存切线空间是为了蒙皮动画：存模型空间的话，骨骼一转法线就对不上了。
+    float3 bitangent = cross(v.normalOS, v.tangentOS.xyz) * v.tangentOS.w;
+    float3 smoothOS  = v.smoothTS.x * v.tangentOS.xyz + v.smoothTS.y * bitangent + v.smoothTS.z * v.normalOS;
+
+    float4 posCS = TransformObjectToHClip(v.positionOS.xyz);
+    float3 nWS   = TransformObjectToWorldNormal(smoothOS);
+    float2 dirCS = normalize(mul((float3x3)UNITY_MATRIX_VP, nWS).xy);
+    dirCS.x *= _ScreenParams.y / _ScreenParams.x;                    // 宽高比修正
+
+    float fade  = 1.0 - smoothstep(_FadeStart, _FadeEnd, posCS.w);   // posCS.w 即视空间深度
+    float width = _OutlineWidth * v.color.a * fade;                   // 顶点色 A 控制局部粗细
+    posCS.xy += dirCS * width * posCS.w;                              // 乘 w 抵消透视
+    ...
+}</code></pre>
+<p>原文里有两个地方和代码对不上，照抄会踩：正文说描边 Pass 要关闭深度写入，示例却写 <code>ZWrite On</code>；平滑法线虽然算出来了，后面的法线变换依然用的是原法线，要改成 <code>smoothNormal</code> 才生效<a class="cite" href="#ref-14">[14]</a>。</p>
+<p>外扩描边画不好的地方，可以把线画在贴图上。网易游戏学堂的总结把这类方法分成三种：直接画在贴图上（锯齿最大，只适合很小的地方）；本村线（《罪恶装备 Xrd》的做法：贴图上画一条与水平、垂直轴对齐的黑线，给需要描边的位置多建一个位置相同的顶点，把它的 UV 埋进黑线里，调整两者的 UV 关系让三角形被黑线覆盖，这样粗细可控也不出斜向锯齿，代价是对 UV 要求高）；以及用 SDF 还原内描边，理论上也不会有锯齿，但作者没找到商业案例<a class="cite" href="#ref-30">[30]</a>。</p>
+<p>脸部的描边通常还要做深度偏移，让眉毛、睫毛附近的线不被脸吃掉。LiKira 在描边顶点着色里用一张遮罩贴图控制 Z 偏移，脸部再额外加一点固定偏移<a class="cite" href="#ref-4">[4]</a>。至于终末地的描边，我没有找到可靠资料。Tiansing 只提到过场里有撞色边缘光，头发是深度边缘光，衣服是单边菲涅尔<a class="cite" href="#ref-24">[24]</a>；秋大叔复刻的描边用平滑法线外扩，并按相机距离和屏幕空间修正宽度<a class="cite" href="#ref-28">[28]</a>；Morgana 的复现也是带深度缩放的背面外扩<a class="cite" href="#ref-20">[20]</a>。</p>
+
+<h2 id="light">08 / 光照：角色光和场景光分开</h2>
+<p>上面所有部分都依赖“主光方向”。如果直接用场景里的太阳，脸会在镜头转动或角色走动时出现阴阳脸、鼻影乱跳。Tiansing 对终末地的观察是<strong>分离式光照</strong>：角色光照从场景光源中独立出来，局内把光照方向摆正到相机方向，过场里再自定义；场景光经过衰减后只负责整体明暗和色彩晕染<a class="cite" href="#ref-24">[24]</a>。他特别提到，游戏里大部分时候脸上看不到明显的半影，只有大招、特写这类镜头里才有 SDF 半影，推测游戏里有两类灯，一类让脸产生半影，另一类只改亮度和颜色。这和 SDF 脸是配套的：阈值图只在光的水平角度上有意义，光向一旦被锁在相机附近，脸就永远处于画好的那几个形状里，不会出现怪角度。他自己的评价是角色像是“屏蔽了所有难看的角度，只保留了镜头下最美好的样子”。他也说明了这篇文章是不看截帧、纯凭观察的猜测，“不保真”<a class="cite" href="#ref-24">[24]</a>。</p>
+<pre><code>// 相机空间里的一盏固定灯：右上、偏向相机一侧（Unity 的相机看向 -Z，所以 +Z 在相机身后）
+float3 rigVS = normalize(float3(0.35, 0.55, 0.75));
+float3 rigWS = mul((float3x3)UNITY_MATRIX_I_V, rigVS);
+
+// 与场景光混合；混合量为 1 时完全由相机决定
+float3 L = normalize(lerp(sceneLightDirWS, rigWS, _CamLightBlend));
+float3 lightColor = sceneLightColor;                    // 色温和强度仍然来自场景</code></pre>
+<p>混合量不必取满。取 1 时角色会像贴在相机上的纸片，丢掉环境感；取 0.6 到 0.8 之间，既能保住脸的稳定，又保留了一点场景方向。这个数需要在你的镜头体系里调。</p>
+<h3>日光直射强度：同一个角色的两种着色状态</h3>
+<p>秋大叔复刻时注意到，终末地的主光强度会随天气和位置变化，角色整体会变暗，但如果只是降低主光强度，光照方向的分布不变，角色站在墙角时仍然有强烈的主光方向感，而现实里这时角色应该主要被周围的次级光照亮。他的做法是引入一个 0 到 1 的“日光直射强度”，把着色分成两个状态<a class="cite" href="#ref-28">[28]</a>：</p>
+<ul>
+<li>强度为 1：完整的主光逻辑，三层色阶（亮部、暗部、暗中暗）、主光边缘光、刘海阴影、主光参与的高光。</li>
+<li>强度为 0：去掉依赖主光直射的东西，漫反射改成明暗两层，<code>N·L</code> 减弱，高光完全由相机灯决定，刘海阴影消失。</li>
+</ul>
+<p>这是复刻者对游戏表现的解读，没有官方说明。思路值得借鉴：把“主光能不能直射到角色”作为一个单独的参数，而不是靠调光源强度。</p>
+<p>边缘光常见的实现是深度偏移法：把视空间位置沿法线 XY 方向偏移一小段，用偏移后的屏幕坐标采样深度图，如果那处深度比当前像素深出一个阈值，就判为边缘，再乘菲涅尔遮罩和基础色。需要开启深度纹理，Shader 里要有 DepthOnly Pass<a class="cite" href="#ref-4">[4]</a>。</p>
+
+<h2 id="body">09 / 衣服、皮肤和后处理</h2>
+<p>终末地和原神系最大的区别在衣服。原神系的衣服基本是 Ramp 加 ILM 的卡通漫反射，高光用遮罩画出来。Tiansing 的观察是：衣服混合 PBR，间接光用带颜色的 IBL，比预制 Matcap 补充了更丰富的间接光；大量皮衣这类工业风材质混 PBR 也不违和，同时脸部弱化半影，避免“二次元脸加写实衣服”的木偶感<a class="cite" href="#ref-24">[24]</a>。如风的拆帧也说皮肤用 Ramp，衣服是改过的 PBR<a class="cite" href="#ref-22">[22]</a>。</p>
+<p>Morgana 的 URP 复现可以当作这条路线的一个参照：</p>
+<ul>
+<li>漫反射用 Sigmoid 阶跃，边界硬度可调；亮部、暗部、“暗中暗”三层由 Ramp 染色；逆光时 Ramp 的 UV 自动偏移，提亮暗部；加一点顶光补光，防止下巴死黑。</li>
+<li>高光走 GGX，间接光用拟合的 IBL；材质用 ORM 贴图（R 金属度、G 反射率、B AO、A 光滑度）。</li>
+<li>皮肤单独一套 Shader：暗部从皮肤 LUT 里取色，加 SSS 透光和粗糙度控制。</li>
+<li>后处理是三样：32³ 的 3D LUT 调色、Bloom、FXAA<a class="cite" href="#ref-20">[20]</a>。</li>
+</ul>
+<p>这是一个社区作者的复现，不是游戏的实际管线。拿来用的话，只看它怎么把 PBR 和 Ramp 放进同一套流程就够了。</p>
+
+<h2 id="evidence">10 / 终末地：哪些有依据，哪些是猜的</h2>
+<p>把上面提到的终末地相关说法集中放一张表，按来源可靠程度标出来。</p>
+<div class="table-scroll"><table><thead><tr><th>说法</th><th>来源</th><th>我的判断</th></tr></thead><tbody>
+<tr><td>脸部光影用 SDF 阈值图</td><td>如风拆帧判断类似原神、少前2 的 SDF<a class="cite" href="#ref-22">[22]</a>；秋大叔复刻、Morgana 复现、Blender 插件都按 SDF 做<a class="cite" href="#ref-28">[28]</a><a class="cite" href="#ref-20">[20]</a><a class="cite" href="#ref-21">[21]</a></td><td>多人独立判断一致，可信度高；官方未披露</td></tr>
+<tr><td>游戏里大多数时候脸上没有明显半影</td><td>如风：游戏里没见到明暗交界分明的脸，猜测改了很多版<a class="cite" href="#ref-22">[22]</a>；Tiansing：只有特写、大招里才有 SDF 半影<a class="cite" href="#ref-24">[24]</a></td><td>与官方图观感一致（图 1、图 4）。具体是加宽过渡带还是别的办法，未知</td></tr>
+<tr><td>角色光独立于场景光，主光向相机校准</td><td>Tiansing，观察得出<a class="cite" href="#ref-24">[24]</a></td><td>合理，和 SDF 脸配套；单一来源，作者自称“不保真”</td></tr>
+<tr><td>日光直射强度的双状态</td><td>秋大叔复刻时的设计<a class="cite" href="#ref-28">[28]</a></td><td>复刻者的解读，不是游戏实现</td></tr>
+<tr><td>头发和服装高光方向跟随相机</td><td>Tiansing 的观察<a class="cite" href="#ref-24">[24]</a>；秋大叔复刻中的相机灯高光<a class="cite" href="#ref-28">[28]</a></td><td>有两人一致观察，实现细节无法确认</td></tr>
+<tr><td>衣服混合 PBR、带色 IBL；皮肤用 Ramp</td><td>Tiansing<a class="cite" href="#ref-24">[24]</a>；如风<a class="cite" href="#ref-22">[22]</a></td><td>两人一致</td></tr>
+<tr><td>刘海阴影用专门模型做模板渲染；自阴影用向内的阴影代理</td><td>秋大叔从截帧拿到刘海模型<a class="cite" href="#ref-28">[28]</a>；Tiansing 推测 overlay pass 做内偏移当阴影代理<a class="cite" href="#ref-24">[24]</a></td><td>前者来自截帧，较可靠；后者是推测</td></tr>
+<tr><td>美术方向：质感、角色与场景协调、动态笔触</td><td>机核对主创的访谈（2024-12，当时的测试阶段）<a class="cite" href="#ref-25">[25]</a></td><td>只是目标，不是实现</td></tr>
+</tbody></table></div>
+<p>另有一篇“渲染技术拆解：《明日方舟：终末地》的角色为什么好看？”在什么值得买上转载，页面标注“内容由 AI 生成”，观点与 Tiansing 的文章高度重合，我把它们视为同一来源，不重复计数<a class="cite" href="#ref-18">[18]</a>。</p>
+
+<h2 id="practice">11 / 自己做一遍的顺序</h2>
+<ol>
+<li><strong>球加 Ramp。</strong>先用一个球把阈值、过渡、Ramp 取色跑通，转光看明暗。</li>
+<li><strong>头：阈值图加头骨。</strong>找一张或画一张阈值图，接到头骨方向，光转一圈，头转一圈。重点看正面光和背光两端有没有跳变。需要现成工具的话，破晓写过 Unity 下的 GPU 版 UDF 和面部 SDF 烘焙工具<a class="cite" href="#ref-11">[11]</a>。</li>
+<li><strong>刘海投影。</strong>用深度偏移或投影网格，乘到脸的阴影上。</li>
+<li><strong>头发。</strong>先压平法线，出大块明暗；再做 Kajiya-Kay 单层，调通后叠第二层。</li>
+<li><strong>描边。</strong>先做基础外扩，再依次加屏幕等宽、宽高比、距离衰减、平滑法线。</li>
+<li><strong>角色光。</strong>把前面所有用到光向的地方切到同一个角色光，再试镜头旋转。</li>
+<li><strong>最后才是衣服的 PBR 和后处理。</strong></li>
+</ol>
+<p>每一步的检查方式一样：光绕角色转一圈，头转一圈，镜头推拉各一次。</p>
+
+<h2 id="references">参考资料</h2>
+<p class="source-note">查询日期 2026-10-18。知乎文章均读过正文；B 站视频和公众号文章标“摘要”的，我只读到了标题、简介或第三方转述，没有读到正文。官方宣传图通过原站链接展示，保留署名；其余示意图和演示为本站原创。</p>
+<ol class="references">
+<li id="ref-1"><a href="https://www.ggxrd.com/Motomura_Junya_GuiltyGearXrd.pdf" target="_blank" rel="noopener noreferrer">Junya Christopher Motomura — GuiltyGear Xrd’s Art Style（GDC 2015）</a><span>法线、光向量、阈值贴图、顶点色与本村线。PDF 以图片为主，我没能逐页提取文字，所提要点以原 PDF 为准。另见 <a href="https://www.arcsystemworks.com/guilty-gear-xrds-art-style-the-x-factor-between-2d-and-3d-talk-from-gdc-2015-is-now-available-online/" target="_blank" rel="noopener noreferrer">Arc System Works 发布页</a>。</span></li>
+<li id="ref-2"><a href="http://qiankanglai.me/2015/10/09/ggx-part1/index.html" target="_blank" rel="noopener noreferrer">Kanglai Qian — Guilty Gear Xrd（2015）</a><span>Unity 复现笔记：Blinn-Phong 加 Toon，参数由贴图驱动；背面膨胀描边。</span></li>
+<li id="ref-3"><a href="https://www.bilibili.com/opus/1090986658888679424" target="_blank" rel="noopener noreferrer">CandleSpark — SDF面部阴影全解（5.0）</a><span>B 站专栏，2025-10-03。SDF 值图与过渡图的区别、光照角度、翻转、阈值映射、0°/180° 死区与过渡带跳变。本文讲解最细的一篇。</span></li>
+<li id="ref-4"><a href="https://li-kira.github.io/2023/11/13/ToonShader/" target="_blank" rel="noopener noreferrer">LiKira — 卡通渲染全流程，以崩坏星穹铁道角色为例（2023）</a><span>Unity 2022.3 / URP 14。LightMap 通道、二分阴影、Ramp、面部 SDF 完整代码、描边、深度偏移边缘光。</span></li>
+<li id="ref-5"><a href="https://mos9527.com/posts/pjsk/shading-reverse-part-3/" target="_blank" rel="noopener noreferrer">mos9527 — PJSK Blender 卡通渲染管线重现【3】SDF 面部渲染实现</a><span>光照角的数学推导，从头骨取方向，Frisvad 正交基；指出许多教程假设法线为 +Y 会损失精度。</span></li>
+<li id="ref-6"><a href="https://emiteinna.github.io/game/demo9/index.html" target="_blank" rel="noopener noreferrer">EmiteInna — SDF、任意变形与面部阴影（2023）</a><span>为什么面部阴影图能用 SDF 描述；过渡图的单调条件；用曼哈顿距离和模糊生成的实验。</span></li>
+<li id="ref-7"><a href="https://xmohe.com/techie/special/unity-anime-shader/08-sdf-face-shadow" target="_blank" rel="noopener noreferrer">Xmohe — SDF 面部阴影技术深度解析（Unity 二次元卡通 Shader 专题 08）</a><span>传统方案的问题、制作路径、分辨率与 sRGB 设置、分区控制。文中没有代码。</span></li>
+<li id="ref-8"><a href="https://zhuanlan.zhihu.com/p/411188212" target="_blank" rel="noopener noreferrer">MIZI — 二次元角色卡通渲染：面部篇（知乎，2021-09，编辑于 2021-11-25）</a><span>面部光影的分类：改法线（包裹体、拓扑加法线、拉平）、距离场、Matcap；SDF 的限制；赛马娘的 SDF 加法线混合；鼻尖高光 SDF；FOV 与脸型。</span></li>
+<li id="ref-9"><a href="https://zhuanlan.zhihu.com/p/670837192" target="_blank" rel="noopener noreferrer">Yu-ki016 — 卡通渲染：360度脸部SDF光照方案（知乎，2024-03）</a><span>两类方案的比较；65 张关键帧的 360° 图集、四次采样插值；累加式 SDF 对单调性的要求。</span></li>
+<li id="ref-10"><a href="https://zhuanlan.zhihu.com/p/337944099" target="_blank" rel="noopener noreferrer">欧克欧克 — Signed Distance Field（知乎，2020-12）</a><span>SDF 的定义与 8SSEDT 线性时间算法。CandleSpark 和 mos9527 都引用它作为生成算法的出处。</span></li>
+<li id="ref-11"><a href="https://zhuanlan.zhihu.com/p/705226178" target="_blank" rel="noopener noreferrer">破晓 — GPU生成UDF和面部SDF阴影贴图（知乎，2024-06）</a><span>Saito 算法的 GPU 实现；把关键帧累加成台阶图，分别用上下两级 SDF 求距离。</span></li>
+<li id="ref-12"><a href="https://zhuanlan.zhihu.com/p/552097741" target="_blank" rel="noopener noreferrer">张洋铭Ocean — Unity URP 卡通渲染 原神角色渲染记录（三）（知乎，编辑于 2024-04）</a><span>SDF 的定义；关键帧到 SDF 插值再到阴影贴图的流程；8SSEDT 的两遍扫描。作者的仿制实现，不是原神源码。</span></li>
+<li id="ref-13"><a href="https://github.com/Gaolingx/GenshinCelShaderURP" target="_blank" rel="noopener noreferrer">Gaolingx — GenshinCelShaderURP</a><span>URP 仿原神项目。ILM 通道、Ramp 行与昼夜分组、顶点色用途。作者对 Albedo 不依赖光源一事自述“不是特别确定”。</span></li>
+<li id="ref-14"><a href="https://www.cnblogs.com/silence394/p/17285224.html" target="_blank" rel="noopener noreferrer">silence394 — 法线外扩描边实现与优化（2022）</a><span>从基础外扩到屏幕等宽、非均匀缩放、宽高比、距离衰减、平滑法线的完整演进。示例代码有两处与正文不一致，见第 07 节。</span></li>
+<li id="ref-15"><a href="https://x-wflo.github.io/2021/08/07/cel-shading5/" target="_blank" rel="noopener noreferrer">Invictus maneo — 【Cel-Shading】各向异性发丝高光（2021）</a><span>Kajiya-Kay 在卡通头发上的用法：切线、方向衰减、噪声偏移。未涉及双高光与卡通化。</span></li>
+<li id="ref-16"><a href="https://www.bilibili.com/read/cv42868673/" target="_blank" rel="noopener noreferrer">Project Sekai 三周年图形更新解说：眼睛的穿透显示（B 站专栏）</a><span>摘要。列出两种方法：眼睛 ZTest Always 配头发遮罩；先写眼睛模板值再画头发。另有微信文章《日式卡通渲染基础技术（下）：头发和眼睛的渲染》讲模板测试的写法。两篇正文我均未读到。</span></li>
+<li id="ref-17"><a href="https://zhuanlan.zhihu.com/p/690066418" target="_blank" rel="noopener noreferrer">Yu-ki016 — 【UE5】通过深度偏移计算刘海投影（知乎，2024-04）</a><span>为什么先去掉头发对脸的真实投影；延迟渲染下偏移屏幕空间深度与头发深度比较。文章大半篇幅是修改 UE 的 ToonBuffer。</span></li>
+<li id="ref-18"><a href="https://post.smzdm.com/p/an5r9rm7/" target="_blank" rel="noopener noreferrer">渲染技术拆解：《明日方舟：终末地》的角色为什么好看？（什么值得买转载，原载公众号“无界游戏学社” 2026-01-28）</a><span>页面标注“内容由 AI 生成”，无截帧与代码，观点与 Tiansing 的文章重合，不单独作为依据。原文链接：<a href="https://mp.weixin.qq.com/s/14InNx-3Z_ygULT_JzfuVA" target="_blank" rel="noopener noreferrer">mp.weixin.qq.com</a>。</span></li>
+<li id="ref-19"><a href="https://www.bilibili.com/video/BV1xmMy6tE1x" target="_blank" rel="noopener noreferrer">在 MMD 实现终末地渲染 / 各向异性头发高光（B 站，2026-08）</a><span>摘要。作者自述各向异性高光用在二游模型上，因 UV 优秀效果好，高低频高光叠加。视频正文未看。</span></li>
+<li id="ref-20"><a href="https://github.com/Morgana-lgtm/Arknights-Endfield-Inspired-Perlica-Character-Shader" target="_blank" rel="noopener noreferrer">Morgana-lgtm — Arknights Endfield Inspired Perlica Character Shader</a><span>Unity 6 / URP 17.3 的终末地风格复现，作者称“仅供参考”。含脸、头发、眼睛、皮肤、刘海投影、描边与后处理，不是官方实现。</span></li>
+<li id="ref-21"><a href="https://github.com/kkskaguya/Endfield-Toon-Addon" target="_blank" rel="noopener noreferrer">kkskaguya — Endfield Toon Addon</a><span>Blender（Goo Engine）下的终末地风格材质插件，脸部类型需要头骨与 SDF 贴图。README 只有使用说明，无算法细节。</span></li>
+<li id="ref-22"><a href="https://zhuanlan.zhihu.com/p/2010357453523530486" target="_blank" rel="noopener noreferrer">如风 — 明日方舟：终末地 的角色渲染（Unity URP）（知乎，2026-02）</a><span>截帧分析：脸类似原神和少前2 的 SDF，但看不到明暗交界分明的脸；皮肤 Ramp；衣服魔改 PBR；前额阴影偏移；嘴唇与鼻尖高光的贴图位置。作者自述还有很多地方不理解。</span></li>
+<li id="ref-23"><a href="https://github.com/ashyukiha/GenshinCharacterShaderZhihuVer" target="_blank" rel="noopener noreferrer">ashyukiha — GenshinCharacterShaderZhihuVer</a><span>知乎配套的 URP 仿原神着色器，含面部阴影图、Ramp、金属高光与描边；作者自己的实现，不是原神源码。</span></li>
+<li id="ref-24"><a href="https://zhuanlan.zhihu.com/p/1997830802369692334" target="_blank" rel="noopener noreferrer">Tiansing — 终末地角色渲染技术赏析：让我好好的夸（不带截帧）（知乎，2026-01）</a><span>作者在文中说明这是不看截帧的观察，“纯顶针，不保真”。涉及分离式光照、高光跟随相机、混合 PBR 与带色 IBL、撞色边缘光、向内阴影代理。</span></li>
+<li id="ref-25"><a href="https://www.gcores.com/articles/192321" target="_blank" rel="noopener noreferrer">Wing／机核编辑部 — 与《明日方舟：终末地》主创海猫、hyf 的访谈（2024-12-16）</a><span>美术目标：二次元写实、质感、角色与场景协调。对应当时测试阶段，不涉及 Shader 实现。</span></li>
+<li id="ref-26"><a href="https://github.com/ColinLeung-NiloCat/UnityURPToonLitShaderExample" target="_blank" rel="noopener noreferrer">NiloCat — Unity URP Toon Lit Shader Example</a><span>作者公开的教学示例，LiKira 的描边代码主要来自这里。</span></li>
+<li id="ref-27"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官方网站 — 影像资料</a><span>「祀：洒扫庭除」与「诀：履旧尘」干员叙事宣传封面，图像权利归 HYPERGRYPH，仅作观感参照。</span></li>
+<li id="ref-28"><a href="https://zhuanlan.zhihu.com/p/2028819446546932894" target="_blank" rel="noopener noreferrer">秋大叔 — 【unity urp】从零模仿复刻实现自己的终末地人物卡通渲染（知乎，2026-04）</a><span>最详细的一篇终末地复刻。日光直射强度双状态、三层色阶与背光补偿、相机灯高光、脸部 SDF 的完整代码、刘海与眼部阴影、头发高光。作者说明是个人复刻，“很多地方纯属经验猜想”。</span></li>
+<li id="ref-29"><a href="https://zhuanlan.zhihu.com/p/360229590" target="_blank" rel="noopener noreferrer">雪羽 — 原神角色渲染Shader分析还原（知乎，2021-03）</a><span>基于视觉效果还原，作者说明没有逆向原神的 Shader。LightMap 的 G 通道、一二级阴影、对崩坏3 算法的简化。</span></li>
+<li id="ref-30"><a href="https://zhuanlan.zhihu.com/p/446479066" target="_blank" rel="noopener noreferrer">网易游戏学堂 — 描边技术总览和常见商业游戏中的描边方案（下）（知乎，2022-06）</a><span>基于贴图的描边：画在贴图上、本村线与类本村线、SDF 内描边。</span></li>
+</ol>
+<div class="article-end"><a href="../index.html#journal">← 返回所有文章</a><button class="close-search" data-share>复制文章链接 ↗</button></div></article></div></main><div class="wrap"><footer class="footer"><a class="footer-logo" href="../index.html">JONNY / STUDIO</a><span class="footer-copy">© 2026 Jonny · 保持好奇，持续创造。</span><div class="footer-links"><a href="../feed.xml">RSS ↗</a><a href="#top">回到顶部 ↑</a></div></footer></div><dialog id="search-dialog" aria-label="搜索文章与实验"><div class="search-top"><input id="search-input" type="search" placeholder="搜索渲染、材质、研究…" aria-label="搜索关键词" autocomplete="off"><button class="close-search" aria-label="关闭搜索">Esc</button></div><div class="search-results" aria-live="polite"></div></dialog><div id="toast" class="toast" role="status" hidden></div><script defer src="../assets/toon-study.js?v=20261018-sdf"></script></body></html>
