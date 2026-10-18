@@ -3,306 +3,374 @@
     "title": "PBR 的核心约束：能量守恒、菲涅耳与微表面模型",
     "description": "正文待撰写",
     "url": "articles/pbr-principles.html",
-    "category": "基础与 LookDev",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 1,
-    "keywords": "FOUNDATIONS"
+    "keywords": "FOUNDATIONS",
+    "series": "基础与 LookDev",
+    "direction": 1
   },
   {
     "title": "建立可信的 LookDev：从输入资产到最终显示",
     "description": "正文待撰写",
     "url": "articles/lookdev-baseline.html",
-    "category": "基础与 LookDev",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 1,
-    "keywords": "FOUNDATIONS"
+    "keywords": "FOUNDATIONS",
+    "series": "基础与 LookDev",
+    "direction": 1
   },
   {
     "title": "从参考到材质：一套可验证的 PBR 制作流程",
     "description": "正文待撰写",
     "url": "articles/pbr-workflow.html",
-    "category": "基础与 LookDev",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 1,
-    "keywords": "FOUNDATIONS"
+    "keywords": "FOUNDATIONS",
+    "series": "基础与 LookDev",
+    "direction": 1
   },
   {
     "title": "色彩管理与显示：线性空间、曝光和色调映射",
     "description": "正文待撰写",
     "url": "articles/color-management.html",
-    "category": "基础与 LookDev",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 1,
-    "keywords": "FOUNDATIONS"
+    "keywords": "FOUNDATIONS",
+    "series": "基础与 LookDev",
+    "direction": 1
   },
   {
     "title": "材质如何响应光：直接光、环境光与反射",
     "description": "正文待撰写",
     "url": "articles/lighting-and-reflection.html",
-    "category": "基础与 LookDev",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 1,
-    "keywords": "FOUNDATIONS"
+    "keywords": "FOUNDATIONS",
+    "series": "基础与 LookDev",
+    "direction": 1
   },
   {
     "title": "表面细节的表达：几何、法线、粗糙度与尺度",
     "description": "正文待撰写",
     "url": "articles/surface-detail.html",
-    "category": "基础与 LookDev",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 1,
-    "keywords": "FOUNDATIONS"
+    "keywords": "FOUNDATIONS",
+    "series": "基础与 LookDev",
+    "direction": 1
   },
   {
     "title": "实时织物渲染：从纤维与织造结构到整体光泽",
     "description": "正文待撰写",
     "url": "articles/fabric-foundations.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "丝绸、天鹅绒与棉：三类织物的着色模型与表现取舍",
     "description": "正文待撰写",
     "url": "articles/fabric-models.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "虹彩材质：薄膜干涉、衍射与艺术化近似",
     "description": "正文待撰写",
     "url": "articles/iridescence.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "闪点材质：微观高光、采样与远景稳定性",
     "description": "正文待撰写",
     "url": "articles/glints.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "写实皮肤渲染：表面反射、次表面散射与细节表达",
     "description": "正文待撰写",
     "url": "articles/realistic-skin.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "写实头发渲染：纤维散射、发片与发丝的实现取舍",
     "description": "正文待撰写",
     "url": "articles/realistic-hair.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "写实眼球渲染：角膜、虹膜、遮蔽与湿润感",
     "description": "正文待撰写",
     "url": "articles/realistic-eyes.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "分层表面渲染：皮革、涂层与局部磨损",
     "description": "正文待撰写",
     "url": "articles/layered-surfaces.html",
-    "category": "写实角色与特殊材质",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 2,
-    "keywords": "REALISTIC MATERIALS"
+    "keywords": "REALISTIC MATERIALS",
+    "series": "写实角色与特殊材质",
+    "direction": 1
   },
   {
     "title": "日式角色渲染体系：光照、阴影、描边与材质分工",
     "description": "正文待撰写",
     "url": "articles/stylized-character-system.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "日式角色面部渲染：法线控制、阈值图与表情稳定性",
     "description": "正文待撰写",
     "url": "articles/stylized-face.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "日式角色头发渲染：高光形状、分束表达与刘海关系",
     "description": "正文待撰写",
     "url": "articles/stylized-hair.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "日式角色眼球渲染：虹膜层次、视差与眼神光控制",
     "description": "正文待撰写",
     "url": "articles/stylized-eyes.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "日式角色服装渲染：图形化明暗与材料辨识",
     "description": "正文待撰写",
     "url": "articles/stylized-clothing.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "日式角色金属渲染：反射概括、高光设计与环境响应",
     "description": "正文待撰写",
     "url": "articles/stylized-metals.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "风格化渲染的视觉语言：动画电影、漫画与手绘效果的实现取舍",
     "description": "正文待撰写",
     "url": "articles/stylized-visual-language.html",
-    "category": "日式与其他风格化渲染",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 3,
-    "keywords": "STYLIZED RENDERING"
+    "keywords": "STYLIZED RENDERING",
+    "series": "日式与其他风格化渲染",
+    "direction": 1
   },
   {
     "title": "岩石与地表材质：从宏观形体到微观细节",
     "description": "正文待撰写",
     "url": "articles/rocks.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "植被渲染：叶片透射、法线、风动与远景稳定性",
     "description": "正文待撰写",
     "url": "articles/vegetation.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "地形渲染：材质混合、跨尺度细节与远近景一致性",
     "description": "正文待撰写",
     "url": "articles/terrain.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "水面与水下渲染：反射、折射、吸收与散射",
     "description": "正文待撰写",
     "url": "articles/water-optics.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "水体交互：涟漪、尾迹、泡沫与波浪的耦合",
     "description": "正文待撰写",
     "url": "articles/water-interaction.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "天空渲染：天空盒与物理大气的选择及衔接",
     "description": "正文待撰写",
     "url": "articles/sky-atmosphere.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "云渲染：贴图动画、视差与体积方案的适用边界",
     "description": "正文待撰写",
     "url": "articles/clouds.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "风格化自然场景：树草、水、天空与云的统一表达",
     "description": "正文待撰写",
     "url": "articles/stylized-environments.html",
-    "category": "场景与自然环境",
+    "category": "渲染与视觉技术",
     "status": "todo",
     "stage": 4,
-    "keywords": "ENVIRONMENTS"
+    "keywords": "ENVIRONMENTS",
+    "series": "场景与自然环境",
+    "direction": 1
   },
   {
     "title": "角色材质系统的分层设计：视觉、数据、Shader 与平台",
     "description": "正文待撰写",
     "url": "articles/material-system-design.html",
-    "category": "渲染工程与生产体系",
+    "category": "工程与生产体系",
     "status": "todo",
     "stage": 5,
-    "keywords": "ENGINEERING & PIPELINE"
+    "keywords": "ENGINEERING & PIPELINE",
+    "series": "渲染工程与生产体系",
+    "direction": 3
   },
   {
     "title": "材质的尺度与时序稳定性：从织纹、闪点到头发",
     "description": "正文待撰写 · 候选选题",
     "url": "articles/temporal-stability.html",
-    "category": "渲染工程与生产体系",
+    "category": "工程与生产体系",
     "status": "todo",
     "stage": 5,
-    "keywords": "ENGINEERING & PIPELINE"
+    "keywords": "ENGINEERING & PIPELINE",
+    "series": "渲染工程与生产体系",
+    "direction": 3
   },
   {
     "title": "PC 与移动端材质适配：保留视觉特征的质量分级",
     "description": "正文待撰写 · 候选选题",
     "url": "articles/cross-platform-materials.html",
-    "category": "渲染工程与生产体系",
+    "category": "工程与生产体系",
     "status": "todo",
     "stage": 5,
-    "keywords": "ENGINEERING & PIPELINE"
+    "keywords": "ENGINEERING & PIPELINE",
+    "series": "渲染工程与生产体系",
+    "direction": 3
   },
   {
     "title": "渲染性能分析：从瓶颈定位到有效优化",
     "description": "正文待撰写 · 候选选题",
     "url": "articles/rendering-performance.html",
-    "category": "渲染工程与生产体系",
+    "category": "工程与生产体系",
     "status": "todo",
     "stage": 5,
-    "keywords": "ENGINEERING & PIPELINE"
+    "keywords": "ENGINEERING & PIPELINE",
+    "series": "渲染工程与生产体系",
+    "direction": 3
   },
   {
     "title": "材质生产工具：资源检查、参数约束与回归验证",
     "description": "正文待撰写 · 候选选题",
     "url": "articles/material-production-tools.html",
-    "category": "渲染工程与生产体系",
+    "category": "程序化与工具开发",
     "status": "todo",
     "stage": 5,
-    "keywords": "ENGINEERING & PIPELINE"
+    "keywords": "ENGINEERING & PIPELINE",
+    "series": "渲染工程与生产体系",
+    "direction": 2
   }
 ]
