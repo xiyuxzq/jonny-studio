@@ -51,3 +51,14 @@ Jonny 的中文技术美术博客与个人作品站。黑白灰主色的深色�
 ## 原创角色教学图
 
 `assets/toon/anime-face-base.png` 与 `anime-material-study.png` 为 AI 辅助生成的原创概念资产，不是游戏截图或本文 Shader 实装。`face-process` 和 `toon-face` 在 Canvas 中以同一底图叠加程序阴影：仅对识别到的面部皮肤区域处理，头发、眼睛和颈部保留插画底图。法线对照来自解析场近似，并非模型法线。面部阈值数据由现有关键帧烘焙函数生成。
+
+## 当前网站结构（2026-10-18 重整）
+- index.html：个人首页，仅展示介绍与分类入口。
+- articles.html：文章库，侧栏分类、跨分类搜索；URL hash 保留分类位置。
+- work.html：独立作品页；about.html：个人介绍。
+- assets/site.css / assets/site.js：当前统一样式与目录交互，四个主页面与34篇规划文章共用。
+- assets/content.json：34篇选题目录，status=todo 表示未完成；旧文章保留原文件但不在导航、搜索和站点地图展示。
+- 文章完成后同步更新正文、目录状态和元数据，再运行 build-metadata.mjs；TODO 页面不计入 RSS，且设置 noindex。
+- 发布时统一更新站内导航与资源版本号。保留旧路径兼容，但首页、文章、作品、关于使用独立页面，避免混合锚点导航。
+
+结构参考：Alex Tardif（https://alextardif.com/）的作品/文章/关于分工；The Technical Artist（https://www.thetechnicalartist.com/）的主题入口。仅参考组织方式，视觉与代码为本站实现。
