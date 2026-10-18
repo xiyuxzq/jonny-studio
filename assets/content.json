@@ -1,5 +1,25 @@
 [
   {
+    "title": "LookDev：建立可信的材质判断环境",
+    "description": "从输入资产、照明与曝光到最终显示，建立可解释、可重复的材质诊断基线。",
+    "url": "articles/lookdev-baseline.html",
+    "category": "渲染与视觉技术",
+    "type": "方法解析",
+    "status": "published",
+    "date": "2026-10-18",
+    "keywords": "LookDev PBR 光照 曝光 材质 色彩"
+  },
+  {
+    "title": "生产工具设计：从批量操作到可靠流程",
+    "description": "围绕修改计划、冲突检测、重复执行、结果验证与恢复，设计可靠的技术美术工具。",
+    "url": "articles/production-tool-design.html",
+    "category": "程序化与工具开发",
+    "type": "系统设计",
+    "status": "published",
+    "date": "2026-10-18",
+    "keywords": "工具 DCC 自动化 生产 流程 冲突 回滚"
+  },
+  {
     "title": "材质系统设计：从一个效果到可维护的生产能力",
     "description": "从视觉约束、数据契约到模块边界与质量验收，附可运行的参数检查器。",
     "url": "articles/material-system-design.html",

@@ -1,1 +1,45 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,follow"><meta http-equiv="refresh" content="0;url=../articles.html?v=20261018-focus"><title>技术文章 · Jonny</title><link rel="stylesheet" href="../assets/site.css?v=20261018-focus"></head><body><main class="shell"><header class="page-intro"><h1>内容已整理</h1><p>请前往文章页查看后续更新。</p><a class="underlink" href="../articles.html?v=20261018-focus">前往技术文章 →</a></header></main></body></html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#141414"><title>LookDev：建立可信的材质判断环境 · Jonny</title><meta name="description" content="从输入资产、照明与曝光到最终显示，建立可解释、可重复的材质诊断基线。"><link rel="icon" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/site.css?v=20261018-three"><script defer src="../assets/site.js?v=20261018-three"></script></head><body id="top"><a class="skip" href="#main">跳到正文</a><div class="shell"><header class="masthead"><a class="wordmark" href="../index.html?v=20261018-three">Jonny<span> / TECHNICAL ART</span></a><nav aria-label="主导航"><a href="../index.html?v=20261018-three">首页</a><a href="../articles.html?v=20261018-three" aria-current="page">文章</a><a href="../work.html?v=20261018-three">作品</a><a href="../about.html?v=20261018-three">关于</a></nav></header><main id="main" class="essay"><nav class="crumb"><a href="../articles.html?v=20261018-three">← 技术文章</a><span>/</span><span>渲染与视觉技术</span></nav><header class="article-head"><span class="kicker">渲染与视觉技术 / 方法解析</span><h1>LookDev：建立可信的材质判断环境</h1><p class="essay-deck">从输入资产、照明与曝光到最终显示，建立可解释、可重复的材质诊断基线。</p><div class="article-meta"><span>Jonny</span><time datetime="2026-10-18">2026.10.18</time><span>方法解析 · 约 12 分钟</span></div></header><div class="essay-layout"><nav class="essay-toc" aria-label="文章目录"><strong>目录</strong><a href="#purpose">01 / 先分清诊断环境与展示环境</a><a href="#chain">02 / 沿着图像形成链路检查</a><a href="#baseline">03 / 建立一个最小可信基线</a><a href="#inputs">04 / 先验证数据，再调整材质</a><a href="#comparison">05 / 跨工具一致性应定义“匹配到哪一层”</a><a href="#record">06 / 把 LookDev 环境当作有版本的资产</a><a href="#finish">07 / 从可信基线进入项目</a><a href="#references">参考资料</a></nav><article class="essay-body"><p class="article-lead">同一套纹理在制作工具中正常，进入引擎后却偏灰、发亮或失去层次。最直接的反应通常是改 Base Color、压高光、重新调粗糙度。但如果差异来自曝光、环境光或显示变换，这些补偿会把材质推离正确方向，并在下一个场景中再次失效。</p>
+<p><strong>LookDev（外观开发）是在可解释的观察条件下，确定资产应当如何表现，以及用什么实现达到这种表现。</strong>它连接模型、材质、纹理、照明与最终显示。一个可用的 LookDev 环境，既要帮助创作，也要帮助判断问题究竟发生在哪一层。</p>
+<p class="scope-note">本文给出环境搭建与诊断方法，并附可填写的基线记录模板。它不是某两个软件已经完全匹配的实验报告；具体菜单、默认值和渲染能力需按项目版本确认。</p>
+<h2 id="purpose">01 / 先分清诊断环境与展示环境</h2>
+<p>展示环境可以用精心安排的反射、轮廓光和调色表达主题。诊断环境则需要减少耦合：固定曝光、明确光照组成、可切换的参考材料，以及能够重复的相机位置。二者都重要，但不能用一张漂亮的展示图证明材质在不同条件下都成立。</p>
+<div class="table-scroll"><table><thead><tr><th>环境</th><th>主要用途</th><th>控制原则</th></tr></thead><tbody><tr><td>诊断基线</td><td>定位输入、受光与显示差异</td><td>简化照明，固定相机和显示设置，逐个改变变量</td></tr><tr><td>代表环境组</td><td>验证资产的适应范围</td><td>选择软光、强方向光和目标使用环境等有差异的条件</td></tr><tr><td>最终展示</td><td>表达视觉目标与完成度</td><td>允许艺术处理，但保留对应诊断基线</td></tr></tbody></table></div>
+<p>我倾向于先建立一个“能解释变化”的小场景，再增加环境数量。大量 HDRI 不能自动提高判断质量；如果每次换环境都同时改变曝光、方向和背景，比较会失去基准。</p>
+<h2 id="chain">02 / 沿着图像形成链路检查</h2>
+<figure class="system-flow"><div><b>输入资产</b><span>纹理、法线、单位</span></div><div><b>表面与照明</b><span>材质模型、光源、反射</span></div><div><b>相机处理</b><span>曝光、色调映射、调色</span></div><div><b>显示输出</b><span>输出变换与观察设备</span></div><figcaption>概念上的诊断顺序。实际引擎可能合并步骤或使用预曝光，不应把它当作固定的 Pass 排列。</figcaption></figure>
+<p>跨工具比较时，“两边都是 PBR”并不意味着画面相同。它们可能采用不同的粗糙度映射、环境预过滤、法线处理、光源近似或色调映射。先检查输入和观察条件，再讨论模型差异，才能避免把不同原因都归到材质参数上。</p>
+<p>同样，两边选择了名称相似的 ACES 选项，也不能证明完整色彩链路一致。需要记录输入变换、工作空间、曝光、视图变换及输出目标。显示设置的名称只是入口，实际配置才是比较依据。</p>
+<h2 id="baseline">03 / 建立一个最小可信基线</h2>
+<p>基线场景至少需要一个测试资产、一组参考表面、固定相机和可拆分的照明。参考表面用于区分错误，不是给整张图提供一个“绝对正确”的亮度答案。</p>
+<ul><li><strong>中性漫反射表面：</strong>观察照明分布和曝光变化。标注其反射率与编码空间，不能把线性 0.18 与图像文件中的 18% 灰度直接等同。</li><li><strong>低粗糙度反射表面：</strong>检查环境旋转、亮源位置、反射结构和几何法线。</li><li><strong>粗糙度阶梯：</strong>观察不同粗糙度下高光形状与反射模糊程度。只在其他条件一致时比较。</li><li><strong>真实测试网格：</strong>包含目标资产会出现的曲率、接缝、镜像 UV 与尺度；球体无法覆盖所有生产问题。</li></ul>
+<p>先用受控的单光源观察直接响应，再单独检查环境照明，最后合并。这样可以发现“材质太亮”究竟来自直射、间接照明还是两者叠加，而不是同时调整多个强度参数。</p>
+<p>对比测试阶段应锁定曝光，记录并控制局部曝光、调色、Bloom 等影响判断的处理。Unreal 提供自动曝光与手动模式：自动曝光会依据画面亮度调整结果，手动模式可固定曝光条件。<a href="#ref-exposure">[1]</a>诊断完成后，再恢复目标场景的实际相机行为验证，而不是假设游戏也必须关闭自动曝光。</p>
+<h2 id="inputs">04 / 先验证数据，再调整材质</h2>
+<p>PBR 参数提供了描述表面的方式，但不会替错误输入兜底。颜色纹理和粗糙度、金属度、遮罩等数据纹理，应分别确认导入解释；法线还要检查通道方向、切线基底与网格导入方式。Epic 的材质文档说明了基础色、粗糙度、金属度与镜面参数的作用，纹理编辑器文档则说明导入属性。<a href="#ref-pbr">[2]</a><a href="#ref-texture">[3]</a></p>
+<p>以“进入引擎后高光变尖”为例，先把粗糙度纹理换成同一常数。如果常数输入下差异仍在，就继续检查光源尺寸、BRDF 与环境预过滤；如果差异消失，再检查纹理通道、解码、Mip 与压缩。这个替换实验比继续盲调原图更容易区分原因。</p>
+<div class="table-scroll"><table><thead><tr><th>现象</th><th>第一组隔离实验</th><th>仍需保留的可能性</th></tr></thead><tbody><tr><td>整体变灰或变亮</td><td>固定曝光，查看中性参考表面</td><td>照明强度、显示变换、颜色输入均可能参与</td></tr><tr><td>高光宽度不同</td><td>常数粗糙度、单一光源，分别改变光源尺寸</td><td>不能仅凭宽度认定粗糙度贴图错误</td></tr><tr><td>接缝或局部反光翻转</td><td>暂时移除法线图，检查切线和镜像 UV</td><td>网格法线、基底与纹理编码需要一起检查</td></tr><tr><td>远景闪烁</td><td>固定分辨率，比较静帧与连续运动</td><td>过滤、抗锯齿、细节频率与反射均可能影响</td></tr></tbody></table></div>
+<h2 id="comparison">05 / 跨工具一致性应定义“匹配到哪一层”</h2>
+<p>建议把一致性拆成三层。第一层是输入语义一致：相同纹理经过等价解码后，代表相同的材料量。第二层是照明与显示条件尽量对齐：方向、强度、曝光与输出条件明确可追溯。第三层才是外观响应比较：在已知差异下判断是否足够支撑制作决策。</p>
+<p>不应把所有差异都当作需要修正的错误。例如两套渲染器对面积光源或环境反射的近似不同，局部高光可能无法逐像素匹配。此时需要明确可接受差异和最终验收环境，而不是通过修改基础色强行让某张截图接近。</p>
+<p>如果要计算图像差值，应先保证相同相机、分辨率和像素对齐，并说明比较的是场景线性结果还是显示后的图像。一个整体误差值不能独立判断材质是否可信：少量高亮像素可能主导数值，时序闪烁则可能不出现在选定静帧里。</p>
+<h2 id="record">06 / 把 LookDev 环境当作有版本的资产</h2>
+<p>一次材质评审应该能回答“这张图是在什么条件下得到的”。环境记录至少包括引擎与渲染路径、资产版本、灯光设置、环境图及旋转、曝光、显示变换、分辨率、相机与后处理。用名称相同但内容不同的环境图做比较，同样会破坏基线。</p>
+<pre><code>{
+  "purpose": "material_diagnosis",
+  "engine_version": null,
+  "renderer": null,
+  "asset_revision": null,
+  "camera": {"transform": null, "projection": null},
+  "lighting": {"direct": null, "environment": null},
+  "exposure": {"mode": "manual", "value_and_units": null},
+  "color_pipeline": {"input": null, "working": null, "view": null},
+  "output": {"resolution": null, "display_target": null},
+  "post_processing": null
+}</code></pre>
+<p>这是记录字段示例，不是引擎可直接导入的配置。空值表示必须按实际环境填写，不能当成默认值。<a href="../assets/examples/lookdev-baseline.json" download>下载基线记录模板</a>。</p>
+<p>环境更新时，应使用代表资产重新建立对照，说明哪些变化来自环境，哪些来自材质。否则“场景变好了”与“资产变好了”会混在同一张图里，无法判断制作修改是否有效。</p>
+<h2 id="finish">07 / 从可信基线进入项目</h2>
+<p>项目初期先选择一个代表资产，在最小基线里检查输入，再放到几种差异明显的光照条件中观察。形成明确结论后，将环境、资产、相机与记录模板一起交给制作人员。随后再根据真实反馈增加自动导入检查、截图对照或环境切换工具。</p>
+<p>LookDev 的价值，是让“看起来不对”可以进一步被定位：是资源输入、受光模型、照明设置，还是显示链路。判断环境稳定下来之后，材质参数才有持续积累的意义，跨工具制作也才有可靠的反馈依据。</p>
+<h2 id="references">参考资料</h2><ol class="references"><li id="ref-exposure"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/auto-exposure-in-unreal-engine">Epic Games — Auto Exposure</a>：自动与手动曝光机制。</li><li id="ref-pbr"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/physically-based-materials-in-unreal-engine">Epic Games — Physically Based Materials</a>：PBR 参数含义。</li><li id="ref-texture"><a href="https://dev.epicgames.com/documentation/en-us/unreal-engine/texture-asset-editor-in-unreal-engine">Epic Games — Texture Asset Editor</a>：纹理导入属性。</li></ol><p class="scope-note">资料核对：2026-10-18。本文为诊断与流程设计方法，未给出未经实测的跨软件匹配结论。</p>
+<div class="article-return"><a href="../articles.html?v=20261018-three">← 返回文章列表</a></div></article></div></main><footer><span>© 2026 Jonny</span><span>Visuals · Tools · Production</span><a href="#top" aria-label="回到页面顶部">↑ 返回顶部</a></footer></div></body></html>

@@ -1,0 +1,28 @@
+{
+  "purpose": "material_diagnosis",
+  "engine_version": null,
+  "renderer": null,
+  "asset_revision": null,
+  "camera": {
+    "transform": null,
+    "projection": null
+  },
+  "lighting": {
+    "direct": null,
+    "environment": null
+  },
+  "exposure": {
+    "mode": "manual",
+    "value_and_units": null
+  },
+  "color_pipeline": {
+    "input": null,
+    "working": null,
+    "view": null
+  },
+  "output": {
+    "resolution": null,
+    "display_target": null
+  },
+  "post_processing": null
+}
