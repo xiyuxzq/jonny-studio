@@ -47,3 +47,7 @@ Jonny 的中文技术美术博客与个人作品站。黑白灰主色的深色�
 ## 文章图表与公式
 
 角色渲染文章包含三张 Mermaid 流程图及四组 LaTeX 公式。Mermaid 源码保存在正文的 `pre.mermaid` 中，LaTeX 保存在 `.latex-display` 中；页面和 `docs/stylized-character-rendering.body.txt` 需同步维护。`assets/article-notation.js` 负责渲染，样式为 `assets/article-notation.css`。Mermaid 与 KaTeX 及公式字体随站点保存在 `assets/vendor/`，版本和许可见该目录 README；无需在读者浏览时访问外部 CDN。窄屏下图表、长公式可在块内横向滑动。
+
+## 原创角色教学图
+
+`assets/toon/anime-face-base.png` 与 `anime-material-study.png` 为 AI 辅助生成的原创概念资产，不是游戏截图或本文 Shader 实装。`face-process` 和 `toon-face` 在 Canvas 中以同一底图叠加程序阴影：仅对识别到的面部皮肤区域处理，头发、眼睛和颈部保留插画底图。法线对照来自解析场近似，并非模型法线。面部阈值数据由现有关键帧烘焙函数生成。

@@ -113,58 +113,77 @@
 
  /* ---- 演示二：法线 N·L 与面部阈值图并排 ---- */
  const faceCanvas = doc.querySelector('#toon-face');
- if (faceCanvas && faceCanvas.getContext('2d')) {
-  const ctx = faceCanvas.getContext('2d');
-  const az = doc.querySelector('#face-az'), el = doc.querySelector('#face-el');
-  const azOut = doc.querySelector('#face-az-out'), elOut = doc.querySelector('#face-el-out');
-  const size = 212, scale = 100, map = bakeThreshold(96, 15);
-  // 预计算头部椭球 + 鼻梁凸起的法线；椭球半轴 (0.8, 1, 0.8)
-  const pix = [];
-  for (let py = 0; py < size; py++) for (let px = 0; px < size; px++) {
-   const x = (px - size / 2 + .5) / scale, y = -(py - size / 2 + .5) / scale, e = x * x / .64 + y * y;
-   if (e > 1) continue;
-   const z = .8 * Math.sqrt(1 - e);
-   let nx = x / .64, ny = y, nz = z / .64, nl = Math.hypot(nx, ny, nz);
-   nx /= nl; ny /= nl; nz /= nl;
-   const bump = .22 * Math.exp(-((x / .13) ** 2 + ((y + .1) / .3) ** 2));
-   nx += bump * 2 * x / .0169; ny += bump * 2 * (y + .1) / .09;
-   nl = Math.hypot(nx, ny, nz);
-   pix.push({ o: (py * size + px) * 4, x, y, nx: nx / nl, ny: ny / nl, nz: nz / nl, a: Math.round(Math.min(1, (1 - Math.sqrt(e)) * 80) * 255) });
-  }
-  const features = cx => {
-   ctx.strokeStyle = 'rgba(25,25,25,.7)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-   for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(cx + s * .3 * scale, 33 + size / 2 - .14 * scale, 13, 5, 0, 0, Math.PI * 2); ctx.stroke(); }
-   ctx.beginPath(); ctx.moveTo(cx - 17, 33 + size / 2 + .5 * scale); ctx.quadraticCurveTo(cx, 33 + size / 2 + .55 * scale, cx + 17, 33 + size / 2 + .5 * scale); ctx.stroke();
-  };
-  const drawFace = () => {
-   const psi = Number(az.value), elev = Number(el.value) * Math.PI / 180, a = psi * Math.PI / 180;
-   azOut.value = psi + '°'; elOut.value = el.value + '°';
-   const L = [Math.sin(a) * Math.cos(elev), Math.sin(elev), Math.cos(a) * Math.cos(elev)];
-   const thr = Math.abs(psi) / 180;
-   ctx.fillStyle = '#191919'; ctx.fillRect(0, 0, 900, 330);
-   for (let mode = 0; mode < 3; mode++) {
-    const data = ctx.createImageData(size, size);
-    for (const p of pix) {
-     let c;
-     if (mode === 0) c = mixColor(smooth(-.02, .02, p.nx * L[0] + p.ny * L[1] + p.nz * L[2]));
-     else {
-      const t = sampleT(map, psi >= 0 ? p.x : -p.x, p.y);
-      if (mode === 1) {
-       const g = Math.round(toSRGB(t) * 255);
-       c = Math.abs(t - thr) < .012 ? (t > .5 ? [0, 0, 0] : [255, 255, 255]) : [g, g, g];
-      } else c = mixColor(faceLit(map, p.x, p.y, psi, .15));
+ const processCanvas = doc.querySelector('#face-process');
+ if (faceCanvas || processCanvas) {
+  const map = bakeThreshold(96, 15), size = 320;
+  const base = doc.createElement('canvas'); base.width = size; base.height = 348;
+  const bx = base.getContext('2d', {willReadFrequently:true});
+  const portrait = new Image();
+  portrait.onload = () => {
+   bx.drawImage(portrait, 0, 0, size, 348);
+   const source = bx.getImageData(0, 0, size, 348);
+   const pixels = [];
+   for (let py=0;py<348;py++) for(let px=0;px<size;px++) {
+    const i=(py*size+px)*4, r=source.data[i], g=source.data[i+1], b=source.data[i+2];
+    const x=(px/size-.512)/.31, y=(.53-py/348)/.30;
+    // Restrict shading to the exposed peach-colored facial skin; hair and eyes retain their base appearance.
+    if(source.data[i+3]>180 && r>g+8 && g>b+5 && r>150 && x*x+y*y<1.2) pixels.push({i,x,y});
+   }
+   const render = (mode, angle, elevation=0) => {
+    const output=doc.createElement('canvas'); output.width=size;output.height=348;
+    const ox=output.getContext('2d'), data=new ImageData(new Uint8ClampedArray(source.data),size,348);
+    const a=angle*Math.PI/180, e=elevation*Math.PI/180, L=[Math.sin(a)*Math.cos(e),Math.sin(e),Math.cos(a)*Math.cos(e)];
+    for(const p of pixels) {
+     let light, t=sampleT(map,angle>=0?p.x:-p.x,p.y);
+     if(mode==='threshold') {
+      const gray=Math.round(t*255), edge=Math.abs(t-Math.abs(angle)/180)<.012;
+      data.data[p.i]=edge?255:gray;data.data[p.i+1]=edge?255:gray;data.data[p.i+2]=edge?255:gray;
+      continue;
      }
-     data.data[p.o] = c[0]; data.data[p.o + 1] = c[1]; data.data[p.o + 2] = c[2]; data.data[p.o + 3] = p.a;
+     if(mode==='normal') {
+      const nx=p.x,ny=p.y,nz=Math.sqrt(Math.max(.01,1-p.x*p.x-p.y*p.y));
+      light=smooth(-.03,.03,nx*L[0]+ny*L[1]+nz*L[2]);
+     } else light=faceLit(map,p.x,p.y,angle,mode==='key'?0:.12);
+     const factors=[.53+.47*light,.49+.51*light,.61+.39*light];
+     for(let c=0;c<3;c++)data.data[p.i+c]=Math.round(source.data[p.i+c]*factors[c]);
     }
-    const cx = 160 + 290 * mode;
-    ctx.putImageData(data, cx - size / 2, 33);
-    features(cx);
-    ctx.textAlign = 'center'; ctx.fillStyle = '#e4e4e4'; ctx.font = '25px system-ui';
-    ctx.fillText(['法线 N·L', '阈值图 T', 'T 与角度比较'][mode], cx, 280);
-    ctx.fillStyle = '#a0a0a0'; ctx.font = '16px monospace'; ctx.fillText(['N·L > 0', 'WHITE LINE: T = φ/π', 'T > φ/π'][mode], cx, 310);
+    ox.putImageData(data,0,0);return output;
+   };
+   if(processCanvas) {
+    const c=processCanvas.getContext('2d'); c.fillStyle='#191919';c.fillRect(0,0,1400,690);
+    c.fillStyle='#eee';c.font='500 24px system-ui';
+    c.fillText('01 关键帧阴影',30,45);c.fillText('02 角度阈值 T',610,45);c.fillText('03 运行时受光',1025,45);
+    [30,60,90,120,150].forEach((angle,k)=>{
+     const x=28+(k%3)*175,y=80+Math.floor(k/3)*270;
+     c.drawImage(render('key',angle),x,y,162,176);
+     c.fillStyle='#bbb';c.font='18px system-ui';c.textAlign='center';c.fillText(angle+'°',x+81,y+205);
+    });
+    c.drawImage(render('threshold',70),590,125,320,348);
+    c.drawImage(render('shade',70),1010,125,320,348);
+    c.textAlign='center';c.fillStyle='#bbb';c.font='18px system-ui';
+    c.fillText('灰度 = 进入阴影的角度 / 180°',750,525);c.fillText('光源水平角 70°',1170,525);
+    c.strokeStyle='#aaa';c.lineWidth=2;
+    for(const x of [550,940]){c.beginPath();c.moveTo(x,300);c.lineTo(x+40,300);c.lineTo(x+30,294);c.moveTo(x+40,300);c.lineTo(x+30,306);c.stroke();}
+    c.textAlign='left';c.fillStyle='#8f8f8f';c.font='17px system-ui';
+    c.fillText('同一角色底图 · 程序计算的面部遮罩 · 发型与眼睛保持底图表现',30,635);
+    c.fillText('二维插画教学合成；灰度为线性数据直接显示，并非游戏资产或三维实机渲染。',30,666);
+   }
+   if(faceCanvas) {
+    faceCanvas.width=1200;faceCanvas.height=490;
+    const c=faceCanvas.getContext('2d'),az=doc.querySelector('#face-az'),el=doc.querySelector('#face-el');
+    const draw=()=>{
+     doc.querySelector('#face-az-out').value=az.value+'°';doc.querySelector('#face-el-out').value=el.value+'°';
+     c.fillStyle='#191919';c.fillRect(0,0,1200,490);
+     ['normal','threshold','shade'].forEach((mode,k)=>{
+      c.drawImage(render(mode,Number(az.value),Number(el.value)),40+k*400,12,320,348);
+      c.textAlign='center';c.fillStyle='#eee';c.font='22px system-ui';
+      c.fillText(['解析法线近似','角度阈值图','设计阴影'][k],200+k*400,408);
+      c.fillStyle='#999';c.font='17px system-ui';c.fillText(['非真实模型法线','白线：当前阈值等值线','仅按水平光向变化'][k],200+k*400,444);
+     });
+    };az.addEventListener('input',draw);el.addEventListener('input',draw);draw();
    }
   };
-  az.addEventListener('input', drawFace); el.addEventListener('input', drawFace); drawFace();
+  portrait.src=new URL('toon/anime-face-base.png',doc.currentScript?.src || new URL('assets/toon-study.js',doc.baseURI)).href;
  }
 
  const progress = doc.createElement('div'); progress.className = 'reading-progress'; progress.setAttribute('aria-hidden', 'true'); doc.body.append(progress);

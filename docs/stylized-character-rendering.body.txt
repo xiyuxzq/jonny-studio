@@ -1,7 +1,7 @@
 <div class="survey-note"><strong>阅读说明</strong><p>本文讨论日式角色三渲二的着色结构，重点分析面部阈值图及其与头发、眼睛、描边和光照的协同关系。《终末地》作为视觉参照，相关技术分析区分主创访谈、社区复现与画面观察，来源见第 10 节。HLSL 为实现示意，配套交互使用程序合成数据，不涉及游戏资产。</p></div>
 <p class="article-intro">日式角色三渲二的核心，是在连续的三维光照中保持经过设计的二维形状。面部需要简洁的阴影，头发需要受控的高光，眼睛需要稳定的表情信息，描边则需要适应镜头与距离变化。这些局部处理必须遵循统一的光照规则。面部阈值图将阴影形状从几何法线中解耦，是本文的重点；相关社区实现覆盖《原神》《崩坏：星穹铁道》及《终末地》风格角色。</p>
 <p>《终末地》的官方画面用于分析风格与视觉层级；具体算法则结合社区作者公开的分析与实现讨论。视觉相似性与实现一致性需要分别判断。</p>
-<figure class="wide-figure"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20261013/8d941e9d4f5162941a07df3ee6bf3231.png" width="1920" height="1080" fetchpriority="high" referrerpolicy="no-referrer" alt="终末地官方干员叙事祀：洒扫庭除宣传封面，展示脸部、头发与服装配件"></a><figcaption>图 1｜官方「祀：洒扫庭除」宣传封面。脸上的明暗交界很柔，看不到硬边的鼻影；头发高光是连续的亮带。封面含宣传排版和后期，不能当作实机着色的证据。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a><a class="cite" href="#ref-27">[27]</a>；© HYPERGRYPH。</figcaption></figure>
+<figure class="wide-figure"><img src="../assets/toon/anime-material-study.png" width="1672" height="940" fetchpriority="high" alt="原创银发二次元角色与织物、皮革、金属的材质概念图"><figcaption>图 1｜角色风格与材料层次的概念示意。统一的脸部色阶、发束高光与服装反射共同构成角色的视觉语言。AI 辅助生成，用于说明目标观感，不是本文代码的渲染结果。</figcaption></figure>
 
 <h2 id="summary">00 / 角色着色结构总览</h2>
 <div class="table-scroll"><table><thead><tr><th>部位</th><th>代表性实现路径</th><th>关键输入</th></tr></thead><tbody>
@@ -72,7 +72,7 @@ float3 diffuse = albedo * shade;                          // 亮部落在 Ramp �
 <p>这张图的每个像素存一个数 <code>T</code>，含义是：<strong>光从正前方转到多少度时，这个点进入阴影，除以 180°</strong>。运行时只要算出当前光的角度 <code>φ</code>，拿 <code>T</code> 去比：<code>T &gt; φ/π</code> 就是亮，否则是暗。光从 0° 转到 180°，每个像素在恰好的那一刻变暗，整体看来就是阴影形状在脸上平滑推过。</p>
 <p>这样做的好处是把“逐像素算光照”变成了“整个头部共用一个角度”。mos9527 的说法很直接：着色只和光照角度有关，相当于对一块法线一致的平面打光<a class="cite" href="#ref-5">[5]</a>。</p>
 <p>这里需要区分两种数据。真正的 SDF（有符号距离场）只出现在<strong>烘焙阶段</strong>，用来把几张关键帧插值成中间形状；运行时用的这张图，CandleSpark 称之为“SDF 过渡图”，它的灰度是一组等高线，每条等高线对应一个光照角度下的明暗分界。因此，过渡图不应按严格的有符号距离场解释<a class="cite" href="#ref-3">[3]</a>。本文以“面部阈值图”指代运行时使用的过渡图。</p>
-<figure class="wide-figure"><img src="../assets/toon/face.svg?v=20261018-sdf" width="1120" height="440" loading="lazy" alt="面部阈值图的三个步骤：关键帧二值图、烘焙出的阈值图、运行时与光照角度比较"><figcaption>图 3｜面部阈值图从制作到使用。左：画几张不同角度的二值阴影图；中：烘焙成一张灰度图（灰度即进入阴影的角度）；右：运行时只比较大小。头部和阴影形状由程序合成，仅作示意。</figcaption></figure>
+<figure class="wide-figure"><canvas id="face-process" width="1400" height="690" role="img" aria-label="原创二次元角色的关键帧阴影、面部角度阈值图和运行时受光对照"></canvas><figcaption>图 3｜以原创二次元角色展示面部阈值图。左：不同水平光向的关键帧；中：同一组数据烘焙的角度阈值；右：70° 时的受光结果。角色底图由 AI 辅助生成，面部阴影由程序计算；头发和眼睛保留底图表现。这是二维教学合成，不是三维模型或游戏实机。</figcaption></figure>
 
 <h3>阈值图的离线烘焙</h3>
 <figure class="diagram-figure"><pre class="mermaid">flowchart TB
@@ -170,7 +170,7 @@ float FaceShadow(float2 uv, float3 L, float3 fwd, float3 right, float3 up, float
 <li><strong>LiKira 的星穹铁道版本</strong>另外用图的 G 通道做了眼部阴影遮罩，把眼睛区域强制抬亮，防止脸在阴影里眼睛也跟着变黑<a class="cite" href="#ref-4">[4]</a>。</li>
 </ul>
 
-<div class="interactive-figure" aria-label="面部阈值图教学演示"><div class="interactive-title"><span>INTERACTIVE / 面部阈值图</span><span>同一个头 · 同一盏灯</span></div><canvas id="toon-face" width="900" height="330" role="img" aria-label="法线加阈值、烘焙出的阈值图、阈值图与角度比较三种脸部明暗对比"></canvas><div class="ramp-control"><label for="face-az" style="min-width:9em">光源水平角 <output id="face-az-out">50°</output></label><input id="face-az" type="range" min="-180" max="180" step="1" value="50"></div><div class="ramp-control" style="margin-top:8px"><label for="face-el" style="min-width:9em">光源仰角 <output id="face-el-out">20°</output></label><input id="face-el" type="range" min="-60" max="80" step="1" value="20"></div><p>左：椭球加一个鼻梁凸起，用 <code>N·L</code> 切出明暗，鼻梁两侧出现杂乱的块。中：本页在浏览器里用上面 Python 的同一套流程烘出来的阈值图 <code>T</code>，白线是当前角度的 <code>T = φ/π</code> 等值线。右：<code>T</code> 与角度比较的结果，过渡带宽度随角度向两端收窄。拖动仰角，只有左图会变；右图不变是设计如此。数据由程序合成，不是任何游戏的脸。</p><noscript>开启 JavaScript 后可调节光源方向。</noscript></div>
+<div class="interactive-figure" aria-label="面部阈值图教学演示"><div class="interactive-title"><span>INTERACTIVE / 面部阈值图</span><span>同一个头 · 同一盏灯</span></div><canvas id="toon-face" width="900" height="330" role="img" aria-label="法线加阈值、烘焙出的阈值图、阈值图与角度比较三种脸部明暗对比"></canvas><div class="ramp-control"><label for="face-az" style="min-width:9em">光源水平角 <output id="face-az-out">50°</output></label><input id="face-az" type="range" min="-180" max="180" step="1" value="50"></div><div class="ramp-control" style="margin-top:8px"><label for="face-el" style="min-width:9em">光源仰角 <output id="face-el-out">20°</output></label><input id="face-el" type="range" min="-60" max="80" step="1" value="20"></div><p>同一张原创角色底图上的三种面部处理：左为解析法线场的光照近似，中为线性角度阈值图及当前等值线，右为阈值比较后的设计阴影。拖动水平角比较阴影移动；仰角仅影响左侧法线近似。遮罩仅作用于露出的面部皮肤，不计算头发投影、眼部或颈部光照；二维插画演示不等同于真实模型渲染。</p><noscript>开启 JavaScript 后可调节光源方向。</noscript></div>
 
 <h3>面部阴影与其他分量的组合</h3>
 <p>阈值图只定义面部的明暗形状，还需与背光、颈部、高光和局部遮挡组合。秋大叔的《终末地》风格复现包含以下处理<a class="cite" href="#ref-28">[28]</a>：</p>
@@ -238,7 +238,7 @@ float  NoH      = dot(N, Hnew);                                         // 后�
 <li>高光用一张美术准备的颜色贴图着色，再叠第二次 Kajiya-Kay 算一圈光晕。</li>
 </ul>
 <p>这些是复刻者按截帧反推的，不是官方实现。MMD 复现终末地渲染的作者也提到各向异性高光配合高低频两层叠加效果很好<a class="cite" href="#ref-19">[19]</a>。</p>
-<figure><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer"><img src="https://web.hycdn.cn/upload/image/20260714/e4c3c1219db9fe092bbb6a8df8bc265a.png" width="1920" height="1080" loading="lazy" referrerpolicy="no-referrer" alt="终末地官方干员叙事诀：履旧尘宣传封面中的头发、眼睛与脸部近景"></a><figcaption>图 4｜官方「诀：履旧尘」宣传封面。头发大块的明暗很稳定，亮带集中在发束上半部。单帧只能看结果，不能判断它是随光还是随相机。来源：<a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官网影像资料</a>；© HYPERGRYPH。</figcaption></figure>
+<figure class="portrait-study"><img src="../assets/toon/anime-face-base.png" width="1211" height="1299" loading="lazy" alt="原创银发二次元角色正面头像，展示发束、眼睛与五官的层次"><figcaption>图 4｜同一原创角色的正面底图。发型轮廓、亮带与眼睛焦点提供不同尺度的视觉信息；动态高光的行为仍需通过模型与着色器验证。AI 辅助生成，用于本页二维面部演示。</figcaption></figure>
 
 <h2 id="eyes">06 / 眼睛</h2>
 <p>卡通眼睛的高光一般直接画在贴图上，不跟着光走，因为眼神光是角色表情的一部分。Morgana 的复现里，眼睛做了两件事：角膜法线球面化，加一个 MatCap 高光，另外有一些颜色处理<a class="cite" href="#ref-20">[20]</a>。结构上不需要真的做角膜折射，这是性价比问题。</p>
@@ -319,7 +319,7 @@ float3 lightColor = sceneLightColor;                    // 色温和强度仍然
 <p>下表区分主创公开陈述、社区作者实现与画面观察，明确各项结论的适用边界。</p>
 <div class="table-scroll"><table><thead><tr><th>说法</th><th>来源</th><th>结论边界</th></tr></thead><tbody>
 <tr><td>脸部光影用 SDF 阈值图</td><td>如风拆帧判断类似原神、少前2 的 SDF<a class="cite" href="#ref-22">[22]</a>；秋大叔复刻、Morgana 复现、Blender 插件都按 SDF 做<a class="cite" href="#ref-28">[28]</a><a class="cite" href="#ref-20">[20]</a><a class="cite" href="#ref-21">[21]</a></td><td>多份社区资料采用相近解释；尚不能据此确认官方实现</td></tr>
-<tr><td>游戏里大多数时候脸上没有明显半影</td><td>如风：游戏里没见到明暗交界分明的脸，猜测改了很多版<a class="cite" href="#ref-22">[22]</a>；Tiansing：只有特写、大招里才有 SDF 半影<a class="cite" href="#ref-24">[24]</a></td><td>与官方图观感一致（图 1、图 4）。具体是加宽过渡带还是别的办法，未知</td></tr>
+<tr><td>游戏里大多数时候脸上没有明显半影</td><td>如风：游戏里没见到明暗交界分明的脸，猜测改了很多版<a class="cite" href="#ref-22">[22]</a>；Tiansing：只有特写、大招里才有 SDF 半影<a class="cite" href="#ref-24">[24]</a></td><td>这是对画面的定性描述；具体过渡函数及控制方式尚不能确认</td></tr>
 <tr><td>角色光独立于场景光，主光向相机校准</td><td>Tiansing，观察得出<a class="cite" href="#ref-24">[24]</a></td><td>合理，和 SDF 脸配套；单一来源，作者自称“不保真”</td></tr>
 <tr><td>日光直射强度的双状态</td><td>秋大叔复刻时的设计<a class="cite" href="#ref-28">[28]</a></td><td>复刻者的解读，不是游戏实现</td></tr>
 <tr><td>头发和服装高光方向跟随相机</td><td>Tiansing 的观察<a class="cite" href="#ref-24">[24]</a>；秋大叔复刻中的相机灯高光<a class="cite" href="#ref-28">[28]</a></td><td>有两人一致观察，实现细节无法确认</td></tr>
@@ -342,7 +342,7 @@ float3 lightColor = sceneLightColor;                    // 色温和强度仍然
 <p>每一步的检查方式一样：光绕角色转一圈，头转一圈，镜头推拉各一次。</p>
 
 <h2 id="references">参考资料</h2>
-<p class="source-note">资料整理日期：2026-10-18。标注“摘要”的条目仅用于导航，不作为完整算法的直接依据。社区复现与画面观察均按作者归属引用，不等同于游戏官方实现。官方宣传图保留来源与署名；其余示意图和演示使用程序合成数据。</p>
+<p class="source-note">资料整理日期：2026-10-18。标注“摘要”的条目仅用于导航，不作为完整算法的直接依据。社区复现与画面观察均按作者归属引用，不等同于游戏官方实现。文章概念配图由 AI 辅助生成，面部演示的阴影和阈值数据由程序计算；配图不作为游戏实现的证据。</p>
 <ol class="references">
 <li id="ref-1"><a href="https://www.ggxrd.com/Motomura_Junya_GuiltyGearXrd.pdf" target="_blank" rel="noopener noreferrer">Junya Christopher Motomura — GuiltyGear Xrd’s Art Style（GDC 2015）</a><span>法线、光向量、阈值贴图、顶点色与本村线。原开发团队技术分享，具体图例与参数以原 PDF 为准。另见 <a href="https://www.arcsystemworks.com/guilty-gear-xrds-art-style-the-x-factor-between-2d-and-3d-talk-from-gdc-2015-is-now-available-online/" target="_blank" rel="noopener noreferrer">Arc System Works 发布页</a>。</span></li>
 <li id="ref-2"><a href="http://qiankanglai.me/2015/10/09/ggx-part1/index.html" target="_blank" rel="noopener noreferrer">Kanglai Qian — Guilty Gear Xrd（2015）</a><span>Unity 复现笔记：Blinn-Phong 加 Toon，参数由贴图驱动；背面膨胀描边。</span></li>
@@ -370,7 +370,7 @@ float3 lightColor = sceneLightColor;                    // 色温和强度仍然
 <li id="ref-24"><a href="https://zhuanlan.zhihu.com/p/1997830802369692334" target="_blank" rel="noopener noreferrer">Tiansing — 终末地角色渲染技术赏析：让我好好的夸（不带截帧）（知乎，2026-01）</a><span>作者在文中说明这是不看截帧的观察，“纯顶针，不保真”。涉及分离式光照、高光跟随相机、混合 PBR 与带色 IBL、撞色边缘光、向内阴影代理。</span></li>
 <li id="ref-25"><a href="https://www.gcores.com/articles/192321" target="_blank" rel="noopener noreferrer">Wing／机核编辑部 — 与《明日方舟：终末地》主创海猫、hyf 的访谈（2024-12-16）</a><span>美术目标：二次元写实、质感、角色与场景协调。对应当时测试阶段，不涉及 Shader 实现。</span></li>
 <li id="ref-26"><a href="https://github.com/ColinLeung-NiloCat/UnityURPToonLitShaderExample" target="_blank" rel="noopener noreferrer">NiloCat — Unity URP Toon Lit Shader Example</a><span>作者公开的教学示例，LiKira 的描边代码主要来自这里。</span></li>
-<li id="ref-27"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官方网站 — 影像资料</a><span>「祀：洒扫庭除」与「诀：履旧尘」干员叙事宣传封面，图像权利归 HYPERGRYPH，仅作观感参照。</span></li>
+<li id="ref-27"><a href="https://endfield.hypergryph.com/#information" target="_blank" rel="noopener noreferrer">《明日方舟：终末地》官方网站 — 影像资料</a><span>官方影像资料入口，用于相关作品的视觉参照；本文配图为原创生成示意。</span></li>
 <li id="ref-28"><a href="https://zhuanlan.zhihu.com/p/2028819446546932894" target="_blank" rel="noopener noreferrer">秋大叔 — 【unity urp】从零模仿复刻实现自己的终末地人物卡通渲染（知乎，2026-04）</a><span>较完整的终末地风格复现记录。日光直射强度双状态、三层色阶与背光补偿、相机灯高光、脸部 SDF 的完整代码、刘海与眼部阴影、头发高光。作者说明是个人复刻，“很多地方纯属经验猜想”。</span></li>
 <li id="ref-29"><a href="https://zhuanlan.zhihu.com/p/360229590" target="_blank" rel="noopener noreferrer">雪羽 — 原神角色渲染Shader分析还原（知乎，2021-03）</a><span>基于视觉效果还原，作者说明没有逆向原神的 Shader。LightMap 的 G 通道、一二级阴影、对崩坏3 算法的简化。</span></li>
 <li id="ref-30"><a href="https://zhuanlan.zhihu.com/p/446479066" target="_blank" rel="noopener noreferrer">网易游戏学堂 — 描边技术总览和常见商业游戏中的描边方案（下）（知乎，2022-06）</a><span>基于贴图的描边：画在贴图上、本村线与类本村线、SDF 内描边。</span></li>

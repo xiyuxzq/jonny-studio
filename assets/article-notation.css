@@ -11,3 +11,8 @@
 @media(max-width:760px){.prose .diagram-figure{padding:15px 8px 12px}.prose .equation-block{padding:12px}.prose .latex-display{font-size:13px}}
 .prose pre.mermaid{overflow-x:auto;white-space:pre}
 .prose .mermaid svg{min-width:480px}
+
+#face-process{display:block;width:100%;height:auto;border:1px solid #414141;border-radius:5px}
+#toon-face{aspect-ratio:1200/490}
+
+.prose .portrait-study img{width:min(100%,480px);margin:auto;background:#202020}
