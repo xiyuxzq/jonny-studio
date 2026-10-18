@@ -1,7 +1,7 @@
 [
   {
     "title": "日式角色卡通渲染拆解：从 Ramp 到面部 SDF",
-    "description": "拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，并标注终末地相关说法的依据等级。",
+    "description": "拆解日式角色三渲二的完整链路：Ramp 漫反射、面部 SDF 阈值图的烘焙与运行时、刘海投影、头发 Kajiya-Kay 高光、眼睛透发、平滑法线描边与角色光分离，结合《终末地》相关公开资料讨论实现取舍。",
     "url": "articles/stylized-character-rendering.html",
     "category": "技术综述",
     "keywords": "卡通渲染 NPR Toon 三渲二 二次元 日式 SDF 面部阴影 阈值图 脸部 Ramp ILM 刘海投影 头发 高光 Kajiya-Kay 天使环 眼睛 透发 模板缓冲 Stencil 描边 平滑法线 角色光 终末地 明日方舟 原神 星穹铁道 罪恶装备 Xrd Endfield 知乎 URP Unity"
