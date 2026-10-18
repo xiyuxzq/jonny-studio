@@ -12,7 +12,7 @@
  function draw(){
   const angle=Number(slider.value)*Math.PI/180;output.value=slider.value+'°';
   const l=[Math.sin(angle),.25,Math.cos(angle)],len=Math.hypot(...l);for(let i=0;i<3;i++)l[i]/=len;
-  ctx.fillStyle='#192117';ctx.fillRect(0,0,900,330);
+  ctx.fillStyle='#191919';ctx.fillRect(0,0,900,330);
   const size=212,radius=102;
   for(let mode=0;mode<3;mode++){
    const data=ctx.createImageData(size,size);
@@ -27,9 +27,9 @@
    }
    const cx=160+290*mode;
    ctx.putImageData(data,cx-size/2,33);
-   ctx.textAlign='center';ctx.fillStyle='#dce7d3';ctx.font='25px system-ui';
+   ctx.textAlign='center';ctx.fillStyle='#e4e4e4';ctx.font='25px system-ui';
    ctx.fillText(['连续响应','硬阈值','带过渡分层'][mode],cx,280);
-   ctx.fillStyle='#91a682';ctx.font='16px monospace';ctx.fillText(['CONTINUOUS','HARD STEP','SOFT BAND'][mode],cx,310);
+   ctx.fillStyle='#a0a0a0';ctx.font='16px monospace';ctx.fillText(['CONTINUOUS','HARD STEP','SOFT BAND'][mode],cx,310);
   }
  }
  slider.addEventListener('input',draw);draw();
