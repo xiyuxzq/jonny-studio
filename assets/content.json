@@ -1,5 +1,12 @@
 [
   {
+    "title": "角色卡通渲染体系：从皮肤、头发与眼睛，到时装和特殊材质",
+    "description": "以16项一手资料梳理角色卡通渲染：明暗分层、面部控制、头发高光、眼球、织物，以及虹彩、闪点与POM的实现边界。",
+    "url": "articles/stylized-character-rendering.html",
+    "category": "技术综述",
+    "keywords": "卡通 NPR Toon Cel 皮肤 SSS 面部 SDF 法线 头发 高光 各向异性 眼球 虹膜 时装 服装 织物 材质 镭射 虹彩 薄膜 干涉 衍射 闪点 亮片 glints 视差 POM 描边 UE Unity 性能 优化"
+  },
+  {
     "title": "让一个渲染实验，成为可验证的作品",
     "description": "从“看起来不错”出发，走向可解释、可比较、可复现的结果。",
     "url": "articles/rendering-as-an-experiment.html",
