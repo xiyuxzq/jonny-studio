@@ -1,4 +1,6 @@
 .DS_Store
 ._*
 _site/
-*.log
+renderers/opengl/offscreen
+*.ppm
+*.o
