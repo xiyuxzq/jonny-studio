@@ -28,5 +28,15 @@
     "status": "published",
     "date": "2026-10-18",
     "keywords": "材质 系统 参数 契约 验证 变体 平台"
+  },
+  {
+    "title": "AI 辅助技术美术：把生成速度留在可验证的判断里",
+    "description": "生成工具可以提出候选，技术美术负责约束、验收和可复用记录。本文定义 AI 专栏的工作边界。",
+    "url": "articles/ai-verification.html",
+    "category": "AI 与技术美术",
+    "type": "专栏方法",
+    "status": "published",
+    "date": "2026-10-18",
+    "keywords": "AI 技术美术 验证 LookDev 工具 材质 边界"
   }
 ]
