@@ -35,24 +35,31 @@
       float t = 0.2;
       float transmit = 1.0;
       vec3 scatter = vec3(0.0);
-      for (int i = 0; i < 48; i++) {
+      float mu = sat(dot(rd, sun));
+      float phase = 0.18 + 0.82 * pow(mu, 8.0);
+      for (int i = 0; i < 40; i++) {
         if (t > tend || transmit < 0.02) break;
         vec3 p = ro + rd * t;
-        float dens = exp(-max(p.y, 0.0) * 0.55) * 0.35;
-        float stepLen = 0.22;
-        float od = dens * stepLen * 2.4;
-        float sunOd = dens * 1.8;
-        vec3 sunCol = vec3(1.0, 0.9, 0.7) * exp(-sunOd) * sat(dot(rd, sun) * 0.5 + 0.5);
-        vec3 amb = vec3(0.35, 0.45, 0.6) * 0.15;
+        float dens = exp(-max(p.y, 0.0) * 0.62) * 0.42;
+        float stepLen = 0.28;
+        float od = dens * stepLen * 2.2;
+        float sunOd = 0.0;
+        for (int j = 0; j < 5; j++) {
+          vec3 q = p + sun * (float(j) + 0.5) * 0.5;
+          sunOd += exp(-max(q.y, 0.0) * 0.62);
+        }
+        vec3 sunCol = vec3(1.0, 0.62, 0.32) * exp(-sunOd * 0.28) * phase * 1.8;
+        vec3 amb = vec3(0.28, 0.4, 0.58) * exp(-max(p.y, 0.0) * 0.25) * 0.28;
         float slice = 1.0 - exp(-od);
         scatter += transmit * (sunCol + amb) * slice;
         transmit *= 1.0 - slice;
         t += stepLen;
       }
-      vec3 bg = tGround < hitBox ? vec3(0.16, 0.18, 0.17) : vec3(0.12, 0.14, 0.16);
-      if (hitBox < 79.0 && hitBox <= tGround) bg = vec3(0.22, 0.24, 0.26) * 0.5;
+      vec3 bg = tGround < hitBox ? vec3(0.07, 0.08, 0.075) : vec3(0.05, 0.07, 0.1);
+      if (hitBox < 79.0 && hitBox <= tGround) bg = vec3(0.04, 0.045, 0.05);
       vec3 col = bg * transmit + scatter;
-      gl_FragColor = vec4(pow(max(col, 0.0), vec3(0.4545)), 1.0);
+      col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+      gl_FragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.95)), 1.0);
     }
   `;
   const skyFs = `
@@ -62,28 +69,40 @@
     float sat(float x){return clamp(x,0.0,1.0);}
     void main() {
       vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
-      vec3 rd = normalize(vec3(uv.x, uv.y * 0.55 + 0.18, -1.0));
-      if (rd.y < 0.0) {
-        gl_FragColor = vec4(vec3(0.12, 0.13, 0.12), 1.0);
-        return;
-      }
+      vec3 rd = normalize(vec3(uv.x * 1.05, uv.y * 0.62 + 0.02, -1.0));
       vec3 sun = normalize(uSun);
       float mu = dot(rd, sun);
-      vec3 beta = vec3(0.22, 0.48, 1.0);
-      vec3 scatter = vec3(0.0);
-      float optical = 0.0;
-      for (int i = 0; i < 16; i++) {
-        float h = rd.y * (float(i) + 0.5) / 16.0;
-        float dens = exp(-h / 0.16);
-        optical += dens / 16.0;
-        vec3 viewT = exp(-beta * optical * 1.6);
-        float phase = 0.75 * (1.0 + mu * mu);
-        scatter += viewT * beta * dens * phase / 16.0;
+      vec3 betaR = vec3(0.24, 0.52, 1.15);
+      vec3 betaM = vec3(0.06, 0.07, 0.08);
+      vec3 sumR = vec3(0.0);
+      vec3 sumM = vec3(0.0);
+      for (int i = 0; i < 24; i++) {
+        float s = (float(i) + 0.5) / 24.0;
+        float h = max(rd.y, -0.02) * s * 1.6 + s * s * 0.35;
+        h = max(h, 0.004);
+        float densR = exp(-h / 0.22);
+        float densM = exp(-h / 0.07);
+        float sunH = max(h + sun.y * 0.45, 0.004);
+        vec3 sunT = exp(-betaR * exp(-sunH / 0.22) * 0.55);
+        vec3 viewT = exp(-(betaR * densR + betaM * densM) * 0.085);
+        sumR += viewT * sunT * densR * betaR;
+        sumM += viewT * sunT * densM;
       }
-      vec3 col = scatter * 1.35;
-      col += vec3(1.0, 0.78, 0.45) * pow(sat(mu), 8.0) * exp(-rd.y * 3.0) * 0.35;
-      col += vec3(1.0, 0.97, 0.92) * pow(sat(mu), 600.0);
-      gl_FragColor = vec4(pow(max(col, 0.0), vec3(0.4545)), 1.0);
+      float phaseR = 0.75 * (1.0 + mu * mu);
+      float g = 0.78;
+      float phaseM = (1.0 - g * g) / pow(1.0 + g * g - 2.0 * g * mu, 1.5);
+      vec3 col = sumR * phaseR * 0.055 + sumM * phaseM * vec3(1.0, 0.85, 0.65) * 0.012;
+      float disc = exp((mu - 1.0) * 2800.0);
+      vec3 sunT0 = exp(-betaR * exp(-max(sun.y, 0.02) / 0.2) * 0.35);
+      col += vec3(1.0, 0.9, 0.75) * disc * sunT0 * 3.0;
+      if (rd.y < 0.0) {
+        vec3 ground = vec3(0.05, 0.055, 0.05);
+        float glare = pow(sat(dot(normalize(vec3(rd.x, 0.02, rd.z)), sun)), 6.0);
+        ground += vec3(0.45, 0.22, 0.08) * glare * sat(-rd.y * 4.0);
+        col = mix(ground, col, sat(rd.y * 18.0 + 0.35));
+      }
+      col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+      gl_FragColor = vec4(pow(clamp(col, 0.0, 1.0), vec3(0.95)), 1.0);
     }
   `;
   const vs = `attribute vec2 aPos; void main(){ gl_Position=vec4(aPos,0.0,1.0); }`;

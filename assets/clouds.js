@@ -97,10 +97,12 @@
       density += puff(p, vec3(3.6, 4.7, 7.4), vec3(1.15, 0.8, 1.0));
       density += puff(p, vec3(-2.8, 5.05, 8.2), vec3(1.2, 0.8, 1.05));
       if (density <= 0.02) return 0.0;
-      float detail = fbm(p * 1.25 + vec3(1.7, 0.4, 2.2));
-      float lobe = fbm(p * 0.48 + vec3(0.2, 1.4, 0.7));
-      density = clamp(density * (0.42 + 0.75 * lobe) - (1.0 - detail) * 0.38, 0.0, 1.0);
-      return smoothstep(0.12, 0.48, density);
+      float height = clamp((p.y - 3.1) / 4.6, 0.0, 1.0);
+      float heightGrad = smoothstep(0.0, 0.12, height) * smoothstep(1.0, 0.42, height);
+      float detail = fbm(p * 1.35 + vec3(1.7, 0.4, 2.2));
+      float lobe = fbm(p * 0.42 + vec3(0.2, 1.4, 0.7));
+      density = clamp(density * heightGrad * (0.28 + 0.9 * lobe) - (1.0 - detail) * 0.62, 0.0, 1.0);
+      return smoothstep(0.04, 0.62, density);
     }
 
     float cloudDensity(vec3 p) {
