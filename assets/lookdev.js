@@ -1,7 +1,7 @@
 (() => {
   const canvas = document.querySelector('.lookdev-canvas');
   if (!canvas) return;
-  const gl = canvas.getContext('webgl', { alpha: false, antialias: true, depth: true });
+  const gl = canvas.getContext('webgl', { alpha: false, antialias: true, depth: true, preserveDrawingBuffer: true });
   if (!gl) return;
   gl.getExtension('OES_standard_derivatives');
   gl.getExtension('OES_element_index_uint');
@@ -17,6 +17,12 @@
     uniform sampler2D uMap;
     uniform sampler2D uNrm;
     uniform sampler2D uArm;
+    uniform sampler2D uProfile;
+    uniform sampler2D uSclera;
+    uniform sampler2D uIrisN1;
+    uniform sampler2D uIrisN2;
+    uniform sampler2D uDisp;
+    uniform sampler2D uDepth;
     uniform float uHasMap;
     uniform float uHasNrm;
     uniform float uHasArm;
@@ -74,27 +80,56 @@
       }
       vec3 col = vec3(0.0);
       if (uShade < 0.5) {
-        float curv = clamp(length(fwidth(nGeom)) * 6.0, 0.0, 1.5);
-        float nd = dot(n, l);
-        float band = exp(-nd * nd * (5.0 + curv * 14.0));
-        vec3 blood = vec3(0.5, 0.06, 0.035);
-        col = alb * sat(nd * 0.42 + 0.58) + blood * band * 0.55 + blood * sat(-nd) * 0.06;
+        float worldR = length(fwidth(vW)) / max(length(fwidth(nGeom)), 1e-4);
+        float radiusMm = clamp(worldR * 4.0, 2.0, 120.0);
+        vec3 profile = texture2D(uProfile, vec2(sat(dot(nGeom, l) * 0.5 + 0.5), (radiusMm - 2.0) / 118.0)).rgb;
+        col = vec3(0.95, 0.58, 0.45) * profile;
         float oil = ggx(sat(dot(nGeom, h)), 0.1) * sat(dot(nGeom, l));
-        float broad = ggx(sat(dot(n, h)), 0.45) * ndl * 0.2;
-        col += vec3(1.0, 0.94, 0.88) * (oil * 0.28 + broad);
+        float broad = ggx(sat(dot(n, h)), 0.42) * sat(dot(n, l)) * 0.22;
+        col += vec3(1.0, 0.95, 0.9) * (oil * 0.32 + broad);
       } else if (uShade < 1.5) {
-        vec3 q = normalize(vObj);
-        float irisR = length(q.xy);
-        float inIris = (1.0 - smoothstep(0.2, 0.26, irisR)) * smoothstep(0.15, 0.45, q.z);
-        float pupil = 1.0 - smoothstep(0.07, 0.1, irisR);
-        float spokes = 0.8 + 0.2 * sin(atan(q.y, q.x) * 12.0);
-        vec3 iris = mix(vec3(0.04, 0.2, 0.14), vec3(0.02, 0.06, 0.04), spokes);
-        iris = mix(iris, vec3(0.01, 0.008, 0.006), pupil);
-        vec3 sclera = vec3(0.8, 0.76, 0.72) * (0.5 + 0.6 * ndl);
-        vec3 base = mix(sclera, iris, inIris);
-        float catch = pow(sat(dot(nGeom, h)), 900.0);
-        float fres = pow(1.0 - ndv, 3.5);
-        col = base + vec3(1.0) * catch * 1.5 + fres * 0.16;
+        vec3 dp1 = dFdx(vW);
+        vec3 dp2 = dFdy(vW);
+        vec2 du1 = dFdx(vUv);
+        vec2 du2 = dFdy(vUv);
+        vec3 tng = dp1 * du2.y - dp2 * du1.y;
+        if (dot(tng, tng) < 1e-8) tng = vec3(1.0, 0.0, 0.0);
+        tng = normalize(tng);
+        vec3 btg = normalize(cross(nGeom, tng));
+        vec3 viewTS = normalize(vec3(dot(v, tng), dot(v, btg), dot(v, nGeom)));
+        vec2 irisUv = (vUv - 0.5) / 0.30 + 0.5;
+        float cavity = texture2D(uDepth, irisUv).r;
+        irisUv -= viewTS.xy / max(viewTS.z, 0.25) * 0.07 * cavity;
+        vec2 delta = viewTS.xy / max(viewTS.z, 0.25) * 0.08 / 12.0;
+        float layer = 0.0;
+        for (int i = 0; i < 12; i++) {
+          float height = texture2D(uDisp, irisUv).r;
+          if (layer > height) break;
+          irisUv -= delta;
+          layer += 1.0 / 12.0;
+        }
+        vec3 n1 = texture2D(uIrisN1, irisUv).xyz * 2.0 - 1.0;
+        vec3 n2 = texture2D(uIrisN2, irisUv).xyz * 2.0 - 1.0;
+        n1.y = -n1.y;
+        n2.y = -n2.y;
+        vec3 nIris = normalize(vec3(n1.xy * 0.7 + n2.xy * 0.85, n1.z));
+        nIris = normalize(tng * nIris.x + btg * nIris.y + nGeom * nIris.z);
+        float disk = length(vUv - vec2(0.5));
+        float inIris = 1.0 - smoothstep(0.145, 0.17, disk);
+        vec3 iris = pow(texture2D(uMap, irisUv).rgb, vec3(2.2));
+        vec3 sclera = pow(texture2D(uSclera, vUv).rgb, vec3(2.2));
+        vec3 sn = texture2D(uNrm, vUv).xyz * 2.0 - 1.0;
+        sn.y = -sn.y;
+        vec3 nSclera = normalize(tng * sn.x + btg * sn.y + nGeom * sn.z);
+        float irisNd = sat(dot(nIris, l));
+        float scleraNd = sat(dot(nSclera, l));
+        vec3 irisLit = iris * (0.18 + irisNd) + vec3(1.0, 0.85, 0.7) * pow(sat(dot(nIris, h)), 40.0) * irisNd * 0.35;
+        vec3 scleraLit = sclera * (0.25 + scleraNd);
+        col = mix(scleraLit, irisLit, inIris);
+        float limbus = smoothstep(0.12, 0.145, disk) * (1.0 - smoothstep(0.145, 0.175, disk));
+        col *= 1.0 - limbus * 0.65;
+        col += vec3(1.0) * pow(sat(dot(nGeom, h)), 900.0) * 1.4;
+        col += vec3(0.85, 0.92, 1.0) * pow(1.0 - sat(dot(nGeom, v)), 4.0) * 0.18;
       } else if (uShade < 2.5) {
         float fu = abs(fract(vUv.x * 18.0) - 0.5);
         float fv = abs(fract(vUv.y * 18.0) - 0.5);
@@ -127,11 +162,12 @@
         col += vec3(0.9, 0.88, 0.84) * pow(sat(dot(n, h)), 70.0) * ndl * 0.4;
         col += vec3(0.22) * pow(1.0 - ndv, 3.0);
       } else if (uShade < 5.5) {
+        if (texture2D(uMap, vUv).a < 0.2) discard;
         vec3 dp1 = dFdx(vW);
         vec3 dp2 = dFdy(vW);
         vec2 du1 = dFdx(vUv);
         vec2 du2 = dFdy(vUv);
-        vec3 tv = dp1 * du2.x - dp2 * du1.x;
+        vec3 tv = dp1 * du2.y - dp2 * du1.y;
         if (dot(tv, tv) < 1e-8) tv = vec3(0.0, 1.0, 0.0);
         vec3 T = normalize(tv);
         float tl = asin(clamp(dot(T, l), -1.0, 1.0));
@@ -141,9 +177,10 @@
         float TT = exp(-(th + 0.18) * (th + 0.18) / 0.02);
         float TRT = exp(-(th + 0.4) * (th + 0.4) / 0.045);
         float facing = sat(dot(n, l) * 0.6 + 0.4);
-        col = vec3(0.16, 0.06, 0.03) * (0.4 + facing);
-        col += vec3(0.95, 0.92, 0.86) * R * 1.15;
-        col += vec3(0.75, 0.32, 0.08) * TT * facing * 1.5;
+        vec3 hair = pow(texture2D(uMap, vUv).rgb, vec3(2.2)) * 2.6;
+        col = hair * (0.55 + facing);
+        col += vec3(0.95, 0.92, 0.86) * R * 1.05;
+        col += vec3(0.75, 0.32, 0.08) * TT * facing * 1.2;
         col += vec3(0.4, 0.08, 0.03) * TRT * facing;
       } else if (uShade < 6.5) {
         col = alb * ao * (0.12 + ndl);
@@ -238,6 +275,12 @@
     map: gl.getUniformLocation(program, 'uMap'),
     nmap: gl.getUniformLocation(program, 'uNrm'),
     arm: gl.getUniformLocation(program, 'uArm'),
+    profile: gl.getUniformLocation(program, 'uProfile'),
+    sclera: gl.getUniformLocation(program, 'uSclera'),
+    irisN1: gl.getUniformLocation(program, 'uIrisN1'),
+    irisN2: gl.getUniformLocation(program, 'uIrisN2'),
+    disp: gl.getUniformLocation(program, 'uDisp'),
+    depth: gl.getUniformLocation(program, 'uDepth'),
     hasMap: gl.getUniformLocation(program, 'uHasMap'),
     hasNrm: gl.getUniformLocation(program, 'uHasNrm'),
     hasArm: gl.getUniformLocation(program, 'uHasArm'),
@@ -630,8 +673,8 @@
   const kind = canvas.dataset.kind === 'environment' ? 'environment' : 'character';
   const entries = kind === 'character'
     ? [
-        { file: 'head/LeePerrySmith.glb', shade: 5, hair: true, yaw: 0.85, pitch: 0.28, fit: 3.5 },
-        { generated: 'eye', shade: 1, yaw: 0.0, pitch: 0.0, distance: 2.15 },
+        { file: 'hair/short02.gltf', shade: 5, yaw: 1.15, pitch: 0.22, fit: 2.5 },
+        { file: 'eye/eye.gltf', shade: 1, eye: true, yaw: 0.95, pitch: 0.12, distance: 1.15 },
         { file: 'head/LeePerrySmith.glb', shade: 0, yaw: 0.55, pitch: 0.06, fit: 3.3 },
         { file: 'pillows/throw_pillows_01_1k.gltf', shade: 2, yaw: 0.7, pitch: 0.42, fit: 3.1 },
         { file: 'pillows/throw_pillows_01_1k.gltf', shade: 3, yaw: 0.9, pitch: 0.48, fit: 3.1 },
@@ -647,9 +690,24 @@
   const cache = new Map();
   async function modelFor(entry) {
     if (entry.generated === 'leg') return { parts: [legMesh()], radius: 1.3 };
-    if (entry.generated === 'eye') return { parts: [eyeMesh()], radius: 1 };
     if (cache.has(entry.file)) return cache.get(entry.file);
-    const pending = loadGltf(base + entry.file);
+    const pending = loadGltf(base + entry.file).then(async (model) => {
+      if (!entry.eye) return model;
+      const dir = base + 'eye/';
+      const names = ['iris_color_brown.png', 'sclera_color.png', 'sclera_normal.png', 'iris_normal_broad.png', 'iris_normal_fine.png', 'iris_displacement.png', 'iris_depth.png'];
+      const images = await Promise.all(names.map((name) => loadImage(dir + name)));
+      const [iris, sclera, scleraN, n1, n2, disp, depth] = images.map((image) => makeTexture(image));
+      for (const part of model.parts) {
+        part.map = iris;
+        part.nmap = scleraN;
+        part.sclera = sclera;
+        part.irisN1 = n1;
+        part.irisN2 = n2;
+        part.disp = disp;
+        part.depth = depth;
+      }
+      return model;
+    });
     cache.set(entry.file, pending);
     return pending;
   }
@@ -690,6 +748,65 @@
   gl.bindTexture(gl.TEXTURE_2D, white);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
 
+  const profile = gl.createTexture();
+  {
+    const width = 256;
+    const height = 64;
+    const pixels = new Uint8Array(width * height * 4);
+    const variance = [0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41];
+    const weight = [
+      [0.233, 0.455, 0.649],
+      [0.100, 0.336, 0.344],
+      [0.118, 0.198, 0.000],
+      [0.113, 0.007, 0.007],
+      [0.358, 0.004, 0.000],
+      [0.078, 0.000, 0.000]
+    ];
+    const scatter = (radius) => {
+      const rgb = [0, 0, 0];
+      for (let i = 0; i < 6; i++) {
+        const v = variance[i];
+        const g = Math.exp(-(radius * radius) / (2 * v)) / Math.sqrt(2 * Math.PI * v);
+        rgb[0] += weight[i][0] * g;
+        rgb[1] += weight[i][1] * g;
+        rgb[2] += weight[i][2] * g;
+      }
+      return rgb;
+    };
+    const steps = 24;
+    for (let y = 0; y < height; y++) {
+      const radiusMm = 2 + (y / (height - 1)) * 118;
+      for (let x = 0; x < width; x++) {
+        const ndl = (x / (width - 1)) * 2 - 1;
+        const theta = Math.acos(Math.max(-1, Math.min(1, ndl)));
+        const total = [0, 0, 0];
+        const light = [0, 0, 0];
+        for (let s = 0; s <= steps; s++) {
+          const angle = -Math.PI / 2 + (Math.PI * s) / steps;
+          const diffuse = Math.max(0, Math.cos(theta + angle));
+          const dist = Math.abs(2 * radiusMm * Math.sin(angle * 0.5));
+          const sample = scatter(dist);
+          for (let c = 0; c < 3; c++) {
+            total[c] += sample[c];
+            light[c] += diffuse * sample[c];
+          }
+        }
+        const offset = (y * width + x) * 4;
+        for (let c = 0; c < 3; c++) {
+          const value = total[c] > 1e-8 ? light[c] / total[c] : 0;
+          pixels[offset + c] = Math.max(0, Math.min(255, Math.round(value * 255)));
+        }
+        pixels[offset + 3] = 255;
+      }
+    }
+    gl.bindTexture(gl.TEXTURE_2D, profile);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+
   function bindPart(part) {
     gl.bindBuffer(gl.ARRAY_BUFFER, part.buffer);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, part.indexBuffer);
@@ -705,6 +822,16 @@
     gl.bindTexture(gl.TEXTURE_2D, part.nmap || white);
     gl.activeTexture(gl.TEXTURE2);
     gl.bindTexture(gl.TEXTURE_2D, part.arm || white);
+    gl.activeTexture(gl.TEXTURE4);
+    gl.bindTexture(gl.TEXTURE_2D, part.sclera || white);
+    gl.activeTexture(gl.TEXTURE5);
+    gl.bindTexture(gl.TEXTURE_2D, part.irisN1 || white);
+    gl.activeTexture(gl.TEXTURE6);
+    gl.bindTexture(gl.TEXTURE_2D, part.irisN2 || white);
+    gl.activeTexture(gl.TEXTURE7);
+    gl.bindTexture(gl.TEXTURE_2D, part.disp || white);
+    gl.activeTexture(gl.TEXTURE8);
+    gl.bindTexture(gl.TEXTURE_2D, part.depth || white);
     gl.uniform1f(loc.hasMap, part.map ? 1 : 0);
     gl.uniform1f(loc.hasNrm, part.nmap ? 1 : 0);
     gl.uniform1f(loc.hasArm, part.arm ? 1 : 0);
@@ -828,6 +955,14 @@
       gl.uniform1i(loc.map, 0);
       gl.uniform1i(loc.nmap, 1);
       gl.uniform1i(loc.arm, 2);
+      gl.uniform1i(loc.profile, 3);
+      gl.uniform1i(loc.sclera, 4);
+      gl.uniform1i(loc.irisN1, 5);
+      gl.uniform1i(loc.irisN2, 6);
+      gl.uniform1i(loc.disp, 7);
+      gl.uniform1i(loc.depth, 8);
+      gl.activeTexture(gl.TEXTURE3);
+      gl.bindTexture(gl.TEXTURE_2D, profile);
       gl.uniform1f(loc.time, reduced.matches ? 0 : now * 0.001);
       const draws = [];
       for (const part of current.parts) draws.push([part, entry.hair ? 0 : entry.water ? 9 : entry.shade]);

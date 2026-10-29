@@ -1,0 +1,8 @@
+MakeHuman system assets, hair/short02.
+License: CC0. The asset pack states this asset was explicitly released as CC0 in September 2020.
+Copyright holders at release: Data Collection AB, Joel Palmius, Jonas Hauquier.
+Pack: https://github.com/makehumancommunity/makehuman (LICENSE.ASSETS.md)
+Download: https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip
+Files used: short02.obj, short02_diffuse.png, short02_normal.png.
+Converted to glTF here. Normals were computed from the mesh because the OBJ has none.
+The material study (Marschner R / TT / TRT) is written for this page.

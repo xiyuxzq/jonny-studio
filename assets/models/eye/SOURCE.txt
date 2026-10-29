@@ -1,0 +1,5 @@
+Eye mesh and textures
+Robo Poets, digital_human
+Art assets CC0. https://github.com/RoboPoets/digital_human
+Files: maps/showcase.glb (eye mesh only), textures/iris_color_brown, iris_depth, iris_displacement, sclera_color, sclera_normal.
+The two iris normals are the broad and fine layers of iris_displacement.
